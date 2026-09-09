@@ -1,0 +1,259 @@
+Implement ONLY the minimum hackathon MVP frontend described in the
+read-only plan you just produced.
+
+IMPORTANT:
+- Do not rebuild the backend.
+- Do not modify working backend logic.
+- Do not create fake data.
+- Do not create fake statistics.
+- Do not create synthetic incidents.
+- Do not implement the Field Officer portal yet.
+- Do not implement RAG yet.
+- Do not implement government data adapters yet.
+- Do not implement advanced analytics yet.
+- Do not implement a full authentication system yet.
+- Do not add unnecessary dependencies.
+- Preserve the existing backend.
+
+We need ONE small React + TypeScript + Vite frontend application.
+
+==================================================
+VIEW 1 — CITIZEN REPORT
+==================================================
+
+Create a Citizen Report page.
+
+It must allow:
+
+1. Select/take a photo.
+2. Preview the photo.
+3. Capture browser GPS using navigator.geolocation.
+4. Display latitude, longitude and accuracy.
+5. Select a civic issue category.
+6. Enter an optional description.
+7. Generate a unique idempotency key.
+8. Submit to:
+
+POST /api/v1/sync/report
+
+Use the EXISTING backend request contract:
+
+- idempotency_key
+- category
+- photo_base64
+- latitude
+- longitude
+- accuracy_meters
+- location_source
+- description
+- client_timestamp
+
+Do not invent fields.
+
+After successful submission:
+
+- display report ID
+- display incident ID/number if returned
+- display citizen-selected category
+- display AI prediction separately if returned
+- display AI confidence if returned
+- display Civic Confidence
+- display Civic Risk
+- display Priority
+
+If a value is unavailable, display:
+"Data unavailable"
+
+Do NOT invent fallback numbers.
+
+==================================================
+VIEW 2 — MUNICIPAL DASHBOARD
+==================================================
+
+Create a Municipal Dashboard page.
+
+Use the existing backend APIs:
+
+GET /api/v1/analytics/overview
+
+GET /api/v1/incidents
+
+GET /api/v1/map/incidents
+
+When an incident is selected:
+
+GET /api/v1/incidents/{incident_id}
+
+GET /api/v1/incidents/{incident_id}/why-score
+
+Dashboard must contain:
+
+- summary cards using ONLY analytics API values
+- priority incident list
+- Chandigarh incident map
+- incident markers using ONLY coordinates returned by /map/incidents
+- category/status filters if supported by the existing API
+- incident detail panel
+- score explanation
+
+If database has no incidents:
+show an honest empty state:
+"No verified incidents yet."
+
+Never create fake map markers.
+
+==================================================
+MAP
+==================================================
+
+Use the simplest reliable map implementation.
+
+Leaflet is acceptable if necessary.
+
+Do not spend time implementing advanced GIS.
+
+The map must consume actual API coordinates.
+
+If map configuration/API key is unavailable, provide a graceful
+non-map fallback rather than fabricating locations.
+
+==================================================
+API CLIENT
+==================================================
+
+Create a small typed API client.
+
+Create TypeScript types based on the ACTUAL backend response schemas.
+
+Do not guess response fields.
+
+Inspect FastAPI/Pydantic schemas before implementing the frontend.
+
+Handle:
+
+- loading
+- success
+- empty
+- network error
+- backend error
+
+==================================================
+UI
+==================================================
+
+Make it professional enough for a hackathon demo.
+
+Brand:
+
+SANKET × CivicLens
+
+Tagline:
+
+"Every report is a signal. Together, they reveal the real problem."
+
+Use a clean civic-tech dashboard style.
+
+Responsive desktop/mobile layout.
+
+Keep the UI simple.
+
+Do not spend credits on animations or unnecessary visual effects.
+
+==================================================
+IMPORTANT AI BEHAVIOR
+==================================================
+
+The current backend requires the citizen to select a category.
+
+Therefore the UI must clearly distinguish:
+
+Citizen-selected category
+
+AND
+
+AI-predicted category/confidence
+
+Do NOT claim:
+
+"AI detected the issue"
+
+unless the backend actually returns that prediction.
+
+Use wording such as:
+
+"AI prediction"
+and
+"Citizen-selected category"
+
+==================================================
+NO FAKE DATA
+==================================================
+
+Absolutely no hardcoded:
+
+- incident counts
+- confidence percentages
+- risk scores
+- priority scores
+- government statistics
+- map locations
+- historical incidents
+
+All displayed data must come from the backend.
+
+==================================================
+FILES
+==================================================
+
+Create the minimum frontend structure needed.
+
+Prefer:
+
+src/
+  main.tsx
+  App.tsx
+  api.ts
+  types.ts
+  styles.css
+  pages/
+    CitizenReportPage.tsx
+    MunicipalDashboardPage.tsx
+  components/
+    PhotoCapture.tsx
+    LocationCapture.tsx
+    ReportResult.tsx
+    IncidentMap.tsx
+    PriorityQueue.tsx
+    IncidentDetailPanel.tsx
+    EmptyState.tsx
+
+Do not create unnecessary architecture.
+
+==================================================
+VERIFICATION
+==================================================
+
+After implementation:
+
+1. Start the frontend.
+2. Verify it compiles.
+3. Verify it can reach the existing backend.
+4. Verify the Citizen page renders.
+5. Verify the Municipal Dashboard renders.
+6. Verify API errors/empty states render correctly.
+
+Do NOT create fake records just to make the UI look populated.
+
+If something prevents implementation, STOP and report the blocker
+instead of inventing a workaround.
+
+At the end report:
+
+- files created
+- files modified
+- commands run
+- build result
+- remaining blocker
+- exact next step
+
+Do not implement anything beyond this MVP.
