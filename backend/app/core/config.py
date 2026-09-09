@@ -1,5 +1,4 @@
 import os
-from pydantic_settings import BaseSettings if "BaseSettings" in globals() else object
 from pydantic import BaseModel
 from typing import Optional
 

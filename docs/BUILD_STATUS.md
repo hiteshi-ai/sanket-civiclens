@@ -13,7 +13,7 @@
 
 | Phase | Description | Status | Verification State |
 |---|---|---|---|
-| **Phase 1** | Repo Structure, Database Models, Spatial Engine, Auth, Base API, Docs | IN_PROGRESS | Starting implementation |
+| **Phase 1** | Repo Structure, Database Models, Spatial Engine, Auth, Base API, Docs | IN_PROGRESS | FastAPI startup, schema bootstrap, health, auth routes, and empty analytics verified |
 | **Phase 2** | Citizen PWA (Offline-First, IndexedDB, Camera, GPS, Idempotency) | PENDING | Scheduled |
 | **Phase 3** | SANKET AI Computer Vision & Feature Classifier | PENDING | Scheduled |
 | **Phase 4** | SANKET Intelligence Engines (Fusion, CC-v1.0, RISK-v1.0, PRIORITY-v1.0, Memory) | PENDING | Scheduled |
@@ -29,7 +29,7 @@
 ## Detailed Component Tracker
 
 ### 1. Core & Backend
-- [ ] Directory layout created
+- [ ] Directory layout created (documented monorepo directories are not present in this checkout)
 - [ ] Database models & schema with spatial capability (PostGIS / SQLite spatial fallback)
 - [ ] RBAC Authentication (CITIZEN, FIELD_WORKER, MUNICIPAL_OFFICER, ADMIN)
 - [ ] Base FastAPI application & routers
@@ -65,6 +65,34 @@
 - [ ] Idempotent sync test: verify no duplicate records
 - [ ] RAG unanswerable test: verify honest refusal
 - [ ] Offline sync browser verification
+
+## Runtime Audit — 2026-09-09
+
+### What works
+- FastAPI imports and starts through `backend.app.main:app`.
+- The local schema bootstraps with SQLAlchemy against the configured database.
+- `/health` returns a healthy service response.
+- The OpenAPI document exposes the implemented `/api/v1` routers.
+- Empty analytics returns zero counts and does not fabricate incidents or scores.
+
+### What was fixed
+- Repaired invalid Python syntax in `backend/app/core/config.py`.
+- Restored the missing FastAPI entrypoint at `backend/app/main.py`.
+- Added the PostgreSQL driver and missing backend runtime dependencies to `backend/requirements.txt`.
+- Added the Replit workflow for port 5000.
+
+### Current gaps
+- The imported checkout contains no `apps/`, `shared/`, `data/`, or `tests/` directories and no frontend package manifest.
+- `pytest` currently reports that no tests are collected.
+- Citizen, field, and municipal portal UI flows therefore remain unavailable in this checkout.
+
+### Commands verified
+- `python -m compileall -q backend`
+- FastAPI `TestClient` startup and `/health`
+- FastAPI `TestClient` `/api/v1/analytics/overview`
+- `curl http://127.0.0.1:5000/health`
+- `curl http://127.0.0.1:5000/api/v1/analytics/overview`
+- `python -m pytest -q` (no tests collected)
 
 ---
 *Last updated: Phase 1 initialized.*

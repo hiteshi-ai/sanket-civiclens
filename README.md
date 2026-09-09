@@ -32,15 +32,17 @@ The monorepo contains:
 
 ### 1. Backend Setup
 ```bash
-cd backend
-python -m pip install -r requirements.txt
-python -m app.main
+python -m pip install -r backend/requirements.txt
+uvicorn backend.app.main:app --host 0.0.0.0 --port 5000
 ```
-The FastAPI documentation and interactive OpenAPI explorer will be live at `http://localhost:8000/docs`.
+The FastAPI documentation and interactive OpenAPI explorer will be live at `http://localhost:5000/docs`.
 
 ### 2. Frontend Applications Setup
+The imported checkout currently does not contain the documented `apps/` frontend directories or a frontend `package.json`. The backend API is the runnable surface until those portal sources are restored.
+
+When the frontend sources are present:
 ```bash
 npm install
 npm run dev
 ```
-The CivicLens portals will be accessible at `http://localhost:5173`.
+The CivicLens portals are expected to be accessible at `http://localhost:5173`.
