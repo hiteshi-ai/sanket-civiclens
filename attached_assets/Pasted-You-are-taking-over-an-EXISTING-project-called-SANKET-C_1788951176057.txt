@@ -1,0 +1,215 @@
+You are taking over an EXISTING project called SANKET × CivicLens.
+
+IMPORTANT:
+This repository was already developed in another AI coding environment.
+DO NOT create a new project.
+DO NOT rebuild the architecture from scratch.
+DO NOT delete existing code.
+DO NOT replace working components.
+DO NOT fabricate data.
+
+The GitHub repository is:
+hiteshi-ai/sanket-civiclens
+
+Project:
+SANKET × CivicLens
+Jurisdiction: Chandigarh, India — entire Chandigarh jurisdiction.
+
+The project follows a strict ZERO FAKE DATA policy.
+
+==================================================
+STEP 1 — INSPECT THE EXISTING PROJECT
+==================================================
+
+First inspect the complete repository.
+
+Read:
+
+- README.md
+- docs/BUILD_STATUS.md
+- docs/ARCHITECTURE.md
+- docs/DATA_INTEGRITY.md
+- docs/DATA_PROVENANCE.md
+- docs/DATA_SOURCE_REGISTRY.md
+- docs/OFFLINE_ARCHITECTURE.md
+- docs/RAG_ARCHITECTURE.md
+- docs/SCORING_METHODOLOGY.md
+- docs/TESTING.md
+- docs/DEPLOYMENT.md
+
+Then inspect:
+
+- backend/
+- frontend/application directories
+- database/
+- shared/
+- data/
+- tests/
+
+Do not trust BUILD_STATUS.md blindly.
+Verify the actual source code.
+
+==================================================
+STEP 2 — RUN THE EXISTING APPLICATION
+==================================================
+
+Determine:
+
+- frontend framework and start command
+- backend framework and start command
+- database requirements
+- environment variables required
+- migration requirements
+- test commands
+
+Actually run the application.
+
+Do not merely explain what should be run.
+
+If something fails, diagnose the error.
+
+==================================================
+STEP 3 — AUDIT IMPLEMENTATION
+==================================================
+
+Check whether these actually work:
+
+BACKEND
+- FastAPI/application startup
+- database connection
+- migrations
+- models
+- API routes
+- authentication/RBAC
+- audit logging
+
+CITIZEN
+- report creation
+- photo capture/upload
+- GPS
+- offline storage
+- IndexedDB
+- synchronization
+
+AI
+- computer vision service
+- civic issue classification
+- deterministic fallback
+
+SANKET INTELLIGENCE
+- Incident Fusion
+- Civic Confidence CC-v1.0
+- Civic Risk RISK-v1.0
+- Priority Aging PRIORITY-v1.0
+- Civic Memory RECURRENCE-v1.0
+- Smart Closure Match CLOSURE-v1.0
+
+MUNICIPAL
+- Chandigarh-wide map
+- incident display
+- priority queue
+- analytics
+
+FIELD
+- assignments
+- before photo
+- after photo
+- closure matching
+- human verification
+
+DATA
+- official data adapters
+- provenance
+- source registry
+
+RAG
+- document ingestion
+- retrieval
+- citations
+- grounded answers
+- refusal when evidence is insufficient
+
+TESTING
+- existing tests
+- build tests
+- API tests
+- offline tests
+
+==================================================
+STEP 4 — DO NOT IMPLEMENT EVERYTHING
+==================================================
+
+After the audit, identify the SINGLE biggest blocker preventing this
+demo flow:
+
+Citizen
+→ Photo + GPS
+→ AI issue detection
+→ Offline report
+→ Sync
+→ Backend
+→ Incident
+→ Civic Confidence
+→ Civic Risk
+→ Priority
+→ Municipal Dashboard
+→ Field Assignment
+→ Before/After Photo
+→ Smart Closure Match
+→ Human Verification
+
+Fix ONLY that highest-priority blocker.
+
+Do not start implementing unrelated features.
+
+After fixing it:
+
+1. Run the relevant tests.
+2. Start the application.
+3. Verify the fix.
+4. Update docs/BUILD_STATUS.md.
+
+==================================================
+ZERO FAKE DATA
+==================================================
+
+Never invent:
+
+- incident counts
+- risk scores
+- confidence percentages
+- historical incidents
+- government statistics
+- exposure values
+- API responses
+
+If data is unavailable, show:
+
+"Data unavailable"
+
+or:
+
+"Historical data unavailable"
+
+A single citizen report must not be represented as corroborated evidence.
+
+==================================================
+IMPORTANT
+==================================================
+
+Actually inspect files.
+Actually run commands.
+Actually modify code when necessary.
+Actually test the changes.
+
+Do NOT just give me a plan.
+
+At the end report:
+
+1. What already works
+2. What doesn't work
+3. What you fixed
+4. Files changed
+5. Commands/tests executed
+6. Current blocker
+7. The exact next implementation step
