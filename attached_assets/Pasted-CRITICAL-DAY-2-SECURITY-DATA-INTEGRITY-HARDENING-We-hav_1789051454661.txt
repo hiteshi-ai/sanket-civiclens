@@ -1,0 +1,287 @@
+CRITICAL DAY 2 SECURITY + DATA-INTEGRITY HARDENING
+
+We have now verified that the basic Citizen Report → Backend → Municipal Dashboard flow works.
+
+Before adding RAG or advanced AI, I found several architectural issues that must be fixed.
+
+IMPORTANT:
+I have very limited remaining agent credits today.
+
+DO NOT build the entire AI system.
+DO NOT build RAG.
+DO NOT build offline/PWA.
+DO NOT add synthetic data.
+DO NOT redesign the whole application.
+
+Focus ONLY on authentication, RBAC, portal separation, and eliminating misleading/random scoring.
+
+==================================================
+1. THREE ROLE-BASED PORTALS
+==================================================
+
+The application must have three roles:
+
+CITIZEN
+MUNICIPAL
+ADMIN
+
+Create a proper login screen before accessing any portal.
+
+After login, route the user to the appropriate portal.
+
+Citizen:
+- Can submit civic reports
+- Can view their own submitted reports/status
+- Cannot access municipal dashboard
+- Cannot access admin functions
+
+Municipal:
+- Can access municipal dashboard
+- Can view incidents/reports allowed for municipal operations
+- Can inspect scores/evidence
+- Cannot access admin management functions
+
+Admin:
+- Can access administrative dashboard
+- Can inspect users/roles
+- Can inspect audit information
+- Can inspect system/data-source status
+- Can access the broader system
+
+==================================================
+2. BACKEND MUST ENFORCE RBAC
+==================================================
+
+This is critical.
+
+Do NOT implement security only by hiding frontend buttons.
+
+Protect backend API endpoints with authentication and role authorization.
+
+A user must not be able to call a municipal/admin API directly without the appropriate role.
+
+Use the existing FastAPI architecture.
+
+Inspect the current backend first and implement the smallest secure authentication mechanism appropriate for the project.
+
+For the hackathon, default demo credentials are acceptable.
+
+Use clearly documented demo accounts, for example:
+
+Citizen:
+username: citizen_demo
+password: change-me
+
+Municipal:
+username: municipal_demo
+password: change-me
+
+Admin:
+username: admin_demo
+password: change-me
+
+IMPORTANT:
+Do not scatter these credentials throughout the frontend source code.
+
+Store/configure them through the appropriate backend seed/config mechanism.
+
+Do not commit real secrets.
+
+==================================================
+3. LOGIN + SESSION
+==================================================
+
+Implement:
+
+POST /auth/login
+
+or an equivalent clean authentication endpoint.
+
+Return an authenticated session/token.
+
+The frontend should retain only what is necessary to maintain the logged-in session.
+
+On refresh:
+
+- authenticated users remain authenticated when appropriate
+- unauthorized users cannot access protected pages
+- logging out clears the session
+
+Do not rely on frontend state alone for authorization.
+
+==================================================
+4. PORTAL PROTECTION
+==================================================
+
+Test:
+
+Citizen → Municipal dashboard URL directly
+
+Must return:
+403/unauthorized or redirect to login.
+
+Citizen → Admin API directly
+
+Must be rejected.
+
+Municipal → Admin API directly
+
+Must be rejected.
+
+Unauthenticated → Municipal API
+
+Must be rejected.
+
+Admin → permitted admin endpoints
+
+Must work.
+
+==================================================
+5. AUDIT LOG
+==================================================
+
+Use the existing audit-log architecture if already available.
+
+Record authentication/authorization events where appropriate:
+
+- login
+- failed login
+- logout if supported
+- unauthorized access attempt
+- important admin action
+
+Do not store plaintext passwords in audit logs.
+
+==================================================
+6. REMOVE MISLEADING RANDOM SCORES
+==================================================
+
+Audit the existing:
+
+- AI confidence
+- Civic Confidence
+- Civic Risk
+- Priority
+
+Find every place where a random, placeholder, fallback, or arbitrary numeric value can be generated.
+
+REMOVE those behaviors.
+
+Absolutely no:
+
+Math.random()
+random()
+hardcoded fake scores
+placeholder percentages
+invented risk values
+
+If a score cannot be computed from actual evidence, return NULL/unavailable with an explicit reason.
+
+Examples:
+
+AI confidence:
+"Unavailable — no verified model prediction."
+
+Civic Risk:
+"Not computable — verified exposure data unavailable."
+
+Historical recurrence:
+"Historical data unavailable."
+
+Priority:
+"Insufficient verified evidence."
+
+Do not invent numbers to make the dashboard look populated.
+
+==================================================
+7. SCORE PROVENANCE
+==================================================
+
+For every score that DOES exist, expose:
+
+- score name
+- score version
+- input evidence
+- calculation status
+- timestamp
+- provenance/source where applicable
+
+For example:
+
+Civic Confidence
+Version: CC-v1.0
+Status: Computed
+Evidence:
+- report count
+- independent report count
+- spatial consistency
+- temporal consistency
+- field verification
+
+Do not invent evidence.
+
+If the current scoring implementation cannot provide this reliably, change the UI to show "Unavailable" rather than pretending.
+
+==================================================
+8. IMPORTANT: DO NOT IMPLEMENT AI PHOTO CLASSIFICATION YET
+==================================================
+
+Do not build the automatic photo classification system in this task.
+
+We will implement that separately.
+
+For now, preserve the current citizen-selected category.
+
+Do NOT silently replace it with AI output.
+
+==================================================
+9. BUILD + SECURITY TEST
+==================================================
+
+After implementation test:
+
+1. Login as citizen.
+2. Access citizen portal.
+3. Submit/report access remains available.
+4. Try municipal route → denied.
+5. Try admin route → denied.
+6. Logout.
+7. Login as municipal.
+8. Municipal dashboard works.
+9. Try admin route → denied.
+10. Login as admin.
+11. Admin portal works.
+12. Refresh browser.
+13. Verify session/route behavior.
+14. Verify unauthorized API requests are rejected.
+
+Also test that no random scores are generated.
+
+==================================================
+10. DO NOT CONSUME TIME ON VISUAL POLISH
+==================================================
+
+Functionality and security are the priority.
+
+Do not redesign the existing UI unless necessary for login/role routing.
+
+==================================================
+FINAL REPORT
+==================================================
+
+When finished, report:
+
+1. Authentication architecture used
+2. Roles implemented
+3. Protected endpoints
+4. Demo credentials/config location
+5. RBAC test results
+6. Random score sources removed
+7. Which scores are now evidence-backed
+8. Which scores correctly show unavailable
+9. Files changed
+10. Build/test result
+
+If anything cannot be safely completed within this task, STOP and report it rather than creating a fake implementation.
+
+Do not implement RAG or advanced AI in this task.
