@@ -45,9 +45,11 @@
 - [ ] Smart Closure Match (`CLOSURE-v1.0`, spatial + cosine image feature comparison)
 
 ### 3. Applications
-- [ ] Citizen PWA: Offline-first IndexedDB, Service Worker, GPS capture, report submission
+- [x] MVP Citizen view: Photo, browser GPS, category, description, and report submission
+- [ ] Citizen PWA: Offline-first IndexedDB and Service Worker
 - [ ] Field Officer PWA: Assigned list, GPS navigation, before/after capture, smart closure
-- [ ] Municipal Command Center: Real KPI stats, Chandigarh-wide GIS map, Priority queue, Analytics
+- [x] MVP Municipal view: Live metrics, API-backed incident map, priority queue, and score details
+- [ ] Full Municipal Command Center: Advanced GIS map and analytics
 
 ### 4. Data Provenance & Official Adapters
 - [ ] `docs/DATA_SOURCE_REGISTRY.md`
@@ -82,7 +84,8 @@
 - Added the Replit workflow for port 5000.
 
 ### Current gaps
-- The imported checkout contains no `apps/`, `shared/`, `data/`, or `tests/` directories and no frontend package manifest.
+- The imported checkout contains no separate `apps/`, `shared/`, or `data/` directories; the MVP frontend is implemented at the repository root.
+- The full multi-portal architecture remains intentionally unimplemented.
 - `pytest` currently reports that no tests are collected.
 - Citizen, field, and municipal portal UI flows therefore remain unavailable in this checkout.
 

@@ -38,11 +38,9 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port 5000
 The FastAPI documentation and interactive OpenAPI explorer will be live at `http://localhost:5000/docs`.
 
 ### 2. Frontend Applications Setup
-The imported checkout currently does not contain the documented `apps/` frontend directories or a frontend `package.json`. The backend API is the runnable surface until those portal sources are restored.
-
-When the frontend sources are present:
+The MVP frontend is a single React/Vite application with Citizen Report and Municipal Dashboard views:
 ```bash
 npm install
-npm run dev
+npm run dev -- --port 5173
 ```
-The CivicLens portals are expected to be accessible at `http://localhost:5173`.
+The MVP frontend is accessible at `http://localhost:5173`. It proxies API requests to the backend on port 5000.

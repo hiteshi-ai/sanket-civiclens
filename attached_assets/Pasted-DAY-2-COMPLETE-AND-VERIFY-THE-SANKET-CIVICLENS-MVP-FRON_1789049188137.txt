@@ -1,0 +1,495 @@
+DAY 2 — COMPLETE AND VERIFY THE SANKET × CIVICLENS MVP FRONTEND
+
+You are continuing work on the existing SANKET × CivicLens repository.
+
+IMPORTANT:
+Do NOT restart the project.
+Do NOT replace the existing backend.
+Do NOT create fake/demo/synthetic civic data.
+Do NOT add unrelated features.
+Do NOT build RAG, field portal, advanced offline/PWA, government adapters, or advanced analytics today.
+
+TODAY'S GOAL:
+
+Make the minimum hackathon MVP work end-to-end:
+
+Citizen Report
+→ real backend API
+→ report stored in database
+→ incident created/found
+→ deterministic Confidence/Risk/Priority
+→ Municipal Dashboard
+→ real incident appears on dashboard/map
+→ refresh does NOT lose data.
+
+The frontend must use the EXISTING backend APIs and database as the source of truth.
+
+==================================================
+1. FIRST: INSPECT THE CURRENT PROJECT
+==================================================
+
+Before changing anything:
+
+1. Inspect the current git status.
+2. Inspect the existing frontend files.
+3. Inspect the existing backend API routes.
+4. Inspect the existing database models/schema.
+5. Determine exactly what frontend work from the previous MVP prompt was completed.
+6. Do not duplicate existing functionality.
+7. Preserve all working backend code.
+
+If something is incomplete, implement it instead of rebuilding it unnecessarily.
+
+==================================================
+2. COMPLETE THE SINGLE FRONTEND APPLICATION
+==================================================
+
+Use ONE React/Vite frontend application.
+
+There should be exactly two primary views:
+
+A. Citizen Report
+B. Municipal Dashboard
+
+Use a clean navigation/header to switch between them.
+
+Do not create separate citizen/field/municipal applications.
+
+==================================================
+3. CITIZEN REPORT VIEW
+==================================================
+
+Implement a complete working report form.
+
+Required fields:
+
+- Photo upload / camera input if supported by the current browser
+- Category
+- Description
+- GPS latitude
+- GPS longitude
+- Location accuracy if available
+
+Categories should come from the actual supported backend contract.
+
+The user must be able to:
+
+1. Select/take a photo.
+2. Get browser GPS permission.
+3. See the captured coordinates.
+4. Select a civic issue category.
+5. Enter a description.
+6. Submit the report.
+
+Use the existing:
+
+POST /api/v1/sync/report
+
+API contract.
+
+The request must include the required fields expected by the backend, including:
+
+- idempotency_key
+- category
+- photo_base64 when a photo is supplied
+- latitude
+- longitude
+- accuracy_meters
+- location_source
+- description
+- client_timestamp
+
+Generate a proper UUID/idempotency key for each submission.
+
+Do NOT hardcode a report ID.
+
+==================================================
+4. REPORT SUBMISSION UX
+==================================================
+
+Show proper states:
+
+- Ready
+- Getting location
+- Uploading/submitting
+- Success
+- Error
+
+After successful submission, display the REAL response from the backend.
+
+Show:
+
+- Report ID
+- Incident ID/number if returned
+- Citizen-selected category
+- AI prediction if the backend provides it
+- AI confidence if available
+- Civic Confidence if available
+- Civic Risk if available
+- Priority if available
+
+IMPORTANT:
+
+The backend currently requires the citizen-selected category.
+
+If an AI prediction is returned, clearly label it as:
+
+"AI prediction"
+
+Do NOT falsely claim that AI automatically changed the submitted category.
+
+If AI data is unavailable, show:
+
+"AI prediction unavailable"
+
+Do not invent confidence values.
+
+==================================================
+5. MUNICIPAL DASHBOARD
+==================================================
+
+Build the dashboard using ONLY real API responses.
+
+Use:
+
+GET /api/v1/analytics/overview
+
+for summary metrics.
+
+Use:
+
+GET /api/v1/incidents
+
+for the priority incident list.
+
+Use:
+
+GET /api/v1/map/incidents
+
+for map data.
+
+Use:
+
+GET /api/v1/incidents/{incident_id}
+
+for incident details.
+
+Use:
+
+GET /api/v1/incidents/{incident_id}/why-score
+
+for the score explanation.
+
+Do not create frontend arrays containing fake incidents.
+
+==================================================
+6. DASHBOARD SUMMARY
+==================================================
+
+Create clean cards for the actual metrics returned by the API.
+
+Examples:
+
+- Total Reports
+- Active Incidents
+- High Priority Incidents
+- Resolved/Closed Incidents
+
+BUT:
+
+Only display a metric if it exists in the actual API response.
+
+Do not invent a formula for a metric that the backend does not provide.
+
+If there are zero records, display:
+
+"0"
+
+This is a valid state.
+
+Never show placeholder numbers such as:
+
+127
+43
+82%
+etc.
+
+unless those numbers actually come from the backend.
+
+==================================================
+7. PRIORITY INCIDENT QUEUE
+==================================================
+
+Display incidents from the real:
+
+GET /api/v1/incidents
+
+endpoint.
+
+Show useful fields such as:
+
+- Incident ID
+- Category
+- Sector/location if available
+- Status
+- Civic Confidence
+- Civic Risk
+- Priority
+- Report count if available
+
+Sort according to the backend priority ordering.
+
+Do not calculate a different priority score in the frontend.
+
+The backend is the source of truth.
+
+==================================================
+8. INCIDENT DETAIL
+==================================================
+
+When a municipal user clicks an incident, open a detail panel/page.
+
+Display:
+
+- Incident ID
+- Category
+- Location
+- Status
+- Reports associated with it
+- Civic Confidence
+- Civic Risk
+- Priority
+- AI information when available
+- Provenance/source information when available
+
+Add a "Why this score?" section.
+
+Fetch the explanation from:
+
+GET /api/v1/incidents/{incident_id}/why-score
+
+Do not invent an explanation in the frontend.
+
+==================================================
+9. REAL MAP
+==================================================
+
+Implement a basic incident map using the existing:
+
+GET /api/v1/map/incidents
+
+endpoint.
+
+Use Leaflet or another lightweight map library if needed.
+
+Display markers ONLY for coordinates returned by the backend.
+
+Do not add fake Chandigarh incident markers.
+
+Clicking a marker should allow the user to identify/open the relevant incident if the API provides the relationship.
+
+If there are no incidents:
+
+Show an honest empty state:
+
+"No civic incidents available for mapping."
+
+Do not create fake markers just to make the map look populated.
+
+==================================================
+10. EMPTY STATES
+==================================================
+
+This is VERY IMPORTANT for SANKET.
+
+The project follows:
+
+ZERO FAKE DATA.
+
+When the database is empty, the UI should still look professional.
+
+Examples:
+
+"No civic incidents available."
+
+"No reports available yet."
+
+"No historical data available."
+
+"AI prediction unavailable."
+
+"Location unavailable — please enable location or retry."
+
+Never replace missing data with fake values.
+
+==================================================
+11. REFRESH / PERSISTENCE TEST
+==================================================
+
+This is a mandatory Day 2 requirement.
+
+Test this exact workflow:
+
+1. Start backend.
+2. Start frontend.
+3. Submit a real test report through the Citizen Report view.
+4. Confirm success response.
+5. Open Municipal Dashboard.
+6. Confirm the new report/incident appears using API data.
+7. Refresh the browser.
+8. Confirm the incident is still present.
+9. Confirm dashboard numbers remain correct.
+10. Confirm no data is being stored only in React state/local mock arrays.
+
+The database/API must be the source of truth.
+
+If refresh causes the data to disappear, FIX it.
+
+Do not solve this by putting fake data into localStorage.
+
+==================================================
+12. ERROR HANDLING
+==================================================
+
+Handle:
+
+- Backend unavailable
+- Network error
+- Invalid API response
+- GPS permission denied
+- Photo too large/invalid
+- Failed report submission
+- Empty database
+
+Show useful human-readable messages.
+
+Do not expose raw stack traces to the user.
+
+==================================================
+13. UI QUALITY
+==================================================
+
+Keep the interface hackathon-quality but simple.
+
+Requirements:
+
+- Responsive desktop/mobile layout
+- Clean cards
+- Clear hierarchy
+- Professional civic/government-tech appearance
+- Clear Risk/Confidence/Priority indicators
+- Good loading states
+- Good empty states
+- No unnecessary animations
+- No unnecessary pages
+- No placeholder lorem ipsum
+- No fake charts
+- No fake statistics
+
+Do not spend the majority of today's work on visual effects.
+
+FUNCTIONALITY FIRST.
+
+==================================================
+14. BACKEND SAFETY
+==================================================
+
+Do not rewrite working backend logic just to accommodate the frontend.
+
+If an API contract is unclear:
+
+Inspect the actual FastAPI route/schema/model first.
+
+Use the existing API contract.
+
+If a backend bug prevents the MVP from working, fix the smallest necessary backend issue and document it.
+
+Do not introduce unrelated backend features.
+
+==================================================
+15. VERIFY THE COMPLETE FLOW
+==================================================
+
+Before saying the task is complete, verify:
+
+[ ] Frontend starts successfully
+[ ] Backend starts successfully
+[ ] Citizen Report page loads
+[ ] GPS works or fails gracefully
+[ ] Photo upload works
+[ ] Category selection works
+[ ] Description works
+[ ] POST /api/v1/sync/report succeeds
+[ ] Real report is stored
+[ ] Incident is created/found
+[ ] Dashboard loads
+[ ] Analytics comes from API
+[ ] Incident list comes from API
+[ ] Map comes from API
+[ ] Incident detail works
+[ ] Why-score works
+[ ] Refresh preserves data
+[ ] Empty state works
+[ ] No fake civic data exists
+[ ] No frontend mock incident arrays remain
+
+==================================================
+16. GIT WORK
+==================================================
+
+Do not commit unrelated generated files or secrets.
+
+After implementation:
+
+1. Run the appropriate build/check command.
+2. Check git diff.
+3. Summarize changed files.
+4. Explain any backend changes.
+5. Explain any limitations.
+6. Do NOT claim something works unless you actually verified it.
+
+Use a meaningful commit message:
+
+"Complete MVP citizen and municipal dashboard flow"
+
+Do not push unless I explicitly ask you to push.
+
+==================================================
+DEFINITION OF DONE
+==================================================
+
+The task is complete ONLY when I can demonstrate this:
+
+CITIZEN
+↓
+Upload real civic issue photo
+↓
+GPS
+↓
+Category + description
+↓
+Submit
+↓
+REAL BACKEND
+↓
+REAL DATABASE
+↓
+Incident + deterministic scores
+↓
+MUNICIPAL DASHBOARD
+↓
+Incident appears
+↓
+Map marker appears
+↓
+Click incident
+↓
+See details + why-score
+↓
+Refresh browser
+↓
+Same data is still there
+
+This is today's priority.
+
+Do not move on to RAG, advanced offline functionality, field portal, or advanced analytics until this flow is working.

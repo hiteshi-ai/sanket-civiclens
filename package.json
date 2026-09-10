@@ -1,26 +1,14 @@
 {
-  "name": "workspace",
+  "name": "civiclens-mvp",
   "version": "1.0.0",
   "description": "> **\"Every report is a signal. Together, they reveal the real problem.\"**   > *SANKET is the intelligence layer, CivicLens is the platform citizens and cities use.*",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "private": true,
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite --host 0.0.0.0 --port 5000",
+    "build": "tsc -p tsconfig.app.json --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 5000"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/hiteshi-ai/sanket-civiclens.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/hiteshi-ai/sanket-civiclens/issues"
-  },
-  "homepage": "https://github.com/hiteshi-ai/sanket-civiclens#readme",
   "dependencies": {
     "@types/leaflet": "^1.9.22",
     "@types/react": "^19.2.18",
