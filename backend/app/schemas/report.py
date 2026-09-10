@@ -1,5 +1,5 @@
 import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from backend.app.models.enums import CivicCategory, ReportSyncStatus, SourceType
 
@@ -16,6 +16,14 @@ class ReportCreate(BaseModel):
     location_source: str = "GPS"  # "GPS" or "MANUAL_SELECTION"
     sector_name: Optional[str] = None
     client_timestamp: datetime.datetime
+
+    @field_validator("client_timestamp")
+    @classmethod
+    def normalize_client_timestamp(cls, value: datetime.datetime) -> datetime.datetime:
+        """Store client timestamps as UTC-naive values for SQLite/Postgres parity."""
+        if value.tzinfo is not None and value.utcoffset() is not None:
+            return value.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+        return value
 
 class ReportSyncBatchRequest(BaseModel):
     reports: List[ReportCreate]

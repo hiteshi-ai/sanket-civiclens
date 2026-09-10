@@ -1,0 +1,173 @@
+URGENT DAY 2 BUG FIX — REAL REPORT SUBMISSION RETURNS HTTP 500
+
+The frontend is now loading correctly and I performed a real end-to-end submission test.
+
+Current result:
+
+- Citizen Report page: WORKING
+- Real photo upload: WORKING
+- Browser GPS: WORKING
+- Latitude: 30.769515
+- Longitude: 76.573446
+- Accuracy: approximately 94 m
+- Category: Drainage / waterlogging
+- Submit button: WORKING
+- POST /api/v1/sync/report: FAILS WITH HTTP 500
+
+The UI displays:
+
+"The request failed (500)."
+
+DO NOT create synthetic data.
+DO NOT bypass the backend.
+DO NOT hide the error in the frontend.
+DO NOT replace the API with mock data.
+
+I need you to diagnose and fix the ACTUAL backend error.
+
+STEP 1 — INSPECT THE SERVER LOG
+
+Immediately reproduce the report submission and inspect the FastAPI/server logs.
+
+Find the exact Python exception/stack trace responsible for the HTTP 500.
+
+Do not guess the cause.
+
+STEP 2 — TRACE THE COMPLETE REQUEST
+
+Trace:
+
+Frontend
+→ POST /api/v1/sync/report
+→ FastAPI route
+→ request/schema validation
+→ photo processing
+→ database report creation
+→ provenance/audit creation
+→ incident fusion
+→ scoring
+→ response
+
+Identify exactly which step fails.
+
+STEP 3 — CHECK THE ACTUAL REQUEST PAYLOAD
+
+Verify that the frontend sends:
+
+- idempotency_key
+- category
+- photo_base64
+- latitude
+- longitude
+- accuracy_meters
+- location_source
+- description
+- client_timestamp
+
+Compare the actual frontend payload with the backend Pydantic schema.
+
+Fix any mismatch.
+
+STEP 4 — CHECK PHOTO PROCESSING
+
+Because this submission contains a real photo, verify that:
+
+- base64 decoding works
+- image processing does not crash
+- AI prediction failure cannot crash the entire report submission
+- an unavailable AI prediction is handled honestly
+
+IMPORTANT:
+
+If AI/CV processing fails, the civic report itself should NOT fail unless the existing architecture explicitly requires it.
+
+The report should still be stored with:
+
+AI prediction unavailable
+
+rather than returning HTTP 500.
+
+STEP 5 — CHECK DATABASE
+
+Verify that report insertion works.
+
+Check:
+
+- reports table
+- incidents table
+- incident_reports relationship
+- provenance/audit records
+- required fields
+- enum values
+- UUID handling
+
+If the database is causing the error, fix the smallest necessary issue.
+
+Do not delete existing data.
+
+STEP 6 — CHECK INCIDENT FUSION AND SCORING
+
+Verify whether incident fusion or deterministic scoring is causing the 500.
+
+If one of these fails because optional information is unavailable, handle the unavailable case correctly.
+
+Do NOT fabricate values.
+
+The scoring engine must remain deterministic.
+
+STEP 7 — IDEMPOTENCY
+
+Verify that idempotency_key works correctly.
+
+Submitting the same request twice must not create duplicate reports.
+
+Do not remove idempotency handling just to make the request succeed.
+
+STEP 8 — ERROR RESPONSE
+
+If an unexpected backend error still occurs, return a useful structured error response and log the actual exception server-side.
+
+Do not expose a Python stack trace in the UI.
+
+STEP 9 — RETEST WITH THE REAL REPORT
+
+After fixing the root cause, repeat the actual workflow:
+
+1. Real photo
+2. GPS
+3. Category
+4. Description
+5. Submit
+6. Confirm HTTP 200/success
+7. Confirm real Report ID
+8. Confirm real Incident ID if created
+9. Open Municipal Dashboard
+10. Confirm incident appears
+11. Confirm map marker uses the submitted coordinates
+12. Open incident details
+13. Check confidence/risk/priority
+14. Refresh browser
+15. Confirm the incident remains because it is stored in the database
+
+Do NOT seed a fake incident for testing.
+
+STEP 10 — BUILD CHECK
+
+Run the appropriate backend/frontend checks and frontend build after the fix.
+
+Then report:
+
+1. Exact root cause of HTTP 500
+2. Exact files changed
+3. Exact fix
+4. Whether real report submission now succeeds
+5. Whether incident creation succeeds
+6. Whether dashboard receives the real incident
+7. Whether map receives the real coordinates
+8. Whether refresh persistence was verified
+
+Do not claim success unless the real workflow was actually tested.
+
+DO NOT implement RAG, offline mode, field portal, or new features in this task.
+
+Fix the HTTP 500 first.
