@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { Incident } from '../../types/civic';
+import { Incident, IncidentStatus, IssueCategory } from '../../types/civic';
 import { useCivic } from '../../context/CivicContext';
 
 interface CivicMapProps {
@@ -10,19 +10,79 @@ interface CivicMapProps {
   height?: string;
   className?: string;
   showFilters?: boolean;
+  /**
+   * 'admin' (default): operational markers (risk scores, SANKET popups).
+   * 'citizen': public layer only — status-colored markers, citizen popups,
+   * no internal scores. Same underlying Leaflet map, tiles and controls.
+   */
+  variant?: 'admin' | 'citizen';
+  /** Citizen variant: called when "View Issue" is pressed in a popup. */
+  onIssueClick?: (id: string) => void;
+  /** Citizen variant: approximate "you are here" dot. */
+  userLocation?: [number, number] | null;
+  /** Citizen variant: fly to these coordinates when they change. */
+  focusTarget?: [number, number] | null;
 }
+
+/* ---------------- Citizen presentation layer (public info only) ---------------- */
+
+const CITIZEN_MARKER_VISUAL: Record<
+  IncidentStatus,
+  { color: string; soft: string; border: string; label: string }
+> = {
+  reported: { color: '#4E5D6C', soft: '#EEF0F3', border: '#DDE1E6', label: 'Reported' },
+  needs_review: { color: '#C88427', soft: '#FBF3E0', border: '#F0E2C4', label: 'Under Review' },
+  assigned: { color: '#24638F', soft: '#EEF5F9', border: '#D4E4EF', label: 'Assigned' },
+  in_progress: { color: '#2F6355', soft: '#EAF3F0', border: '#D3E5DF', label: 'In Progress' },
+  resolved: { color: '#1E6B42', soft: '#E9F4ED', border: '#CDE7D6', label: 'Resolved' },
+};
+
+/** Simplified stroke glyphs (lucide-style paths) so markers read at small size. */
+const CITIZEN_CATEGORY_GLYPH: Record<IssueCategory, string> = {
+  pothole:
+    '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  road_damage:
+    '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  drainage:
+    '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+  water_leak:
+    '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+  waste:
+    '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  streetlight:
+    '<path d="M15 14c.2-1 .7-1.7 1.5-2.5a5.5 5.5 0 1 0-9 0c.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+  other:
+    '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+};
+
+const citizenGlyphSvg = (category: IssueCategory): string =>
+  `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${
+    CITIZEN_CATEGORY_GLYPH[category] ?? CITIZEN_CATEGORY_GLYPH.other
+  }</svg>`;
 
 export const CivicMap: React.FC<CivicMapProps> = ({
   incidents,
   selectedIncidentId,
   onSelectIncident,
   height = '480px',
-  className = ''
+  className = '',
+  variant = 'admin',
+  onIssueClick,
+  userLocation = null,
+  focusTarget = null
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<{ [id: string]: L.Marker }>({});
   const { selectIncident, setIsDetailOpen } = useCivic();
+
+  // Keep the latest citizen click handler without re-creating markers each render.
+  const onIssueClickRef = useRef(onIssueClick);
+  onIssueClickRef.current = onIssueClick;
+
+  const userLocationKey = userLocation ? `${userLocation[0].toFixed(5)},${userLocation[1].toFixed(5)}` : '';
+  const focusKey = focusTarget ? `${focusTarget[0].toFixed(5)},${focusTarget[1].toFixed(5)}` : '';
+  const isCitizen = variant === 'citizen';
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -76,6 +136,100 @@ export const CivicMap: React.FC<CivicMapProps> = ({
 
     // Render incident markers
     incidents.forEach((inc) => {
+      if (isCitizen) {
+        /* ---------------- Citizen marker: status color + category glyph ---------------- */
+        const visual = CITIZEN_MARKER_VISUAL[inc.status];
+        const isSelected = inc.id === selectedIncidentId;
+        const size = isSelected ? 32 : 26;
+
+        const iconHtml = `
+          <div style="transform: translate(-50%, -50%);">
+            <div style="
+              background-color: ${visual.color};
+              border: ${isSelected ? '2.5px solid #191B1F' : '2px solid #FFFFFF'};
+              width: ${size}px;
+              height: ${size}px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 4px 10px rgba(0,0,0,0.22);
+              transition: all 0.2s ease;
+            ">
+              ${citizenGlyphSvg(inc.category)}
+            </div>
+          </div>
+        `;
+
+        const customIcon = L.divIcon({
+          html: iconHtml,
+          className: 'custom-civic-marker',
+          iconSize: [28, 28]
+        });
+
+        const marker = L.marker([inc.latitude, inc.longitude], { icon: customIcon }).addTo(map);
+
+        // Citizen popup: public information only — no risk scores, no internal metadata.
+        const similarCount = inc.confidenceEvidence.relatedReportsCount;
+        const popupHtml = `
+          <div style="padding: 12px 14px; min-width: 210px; font-family: -apple-system, sans-serif; text-align: left;">
+            <div style="font-size: 10px; font-weight: 700; color: ${visual.color}; text-transform: uppercase; letter-spacing: 0.5px;">
+              ${inc.category.replace('_', ' ')}
+            </div>
+            <div style="font-size: 12px; font-weight: 700; color: #191B1F; margin: 4px 0 2px; line-height: 1.3;">
+              ${inc.sector}
+            </div>
+            <div style="font-size: 11px; color: #565C68; margin-bottom: 8px;">
+              Approximate location${similarCount > 3 ? ` · ${similarCount} similar reports` : ''}
+            </div>
+            <div style="
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+              background: ${visual.soft};
+              color: ${visual.color};
+              border: 1px solid ${visual.border};
+              padding: 2px 8px;
+              border-radius: 999px;
+              font-size: 10px;
+              font-weight: 700;
+              margin-bottom: 10px;
+            ">✓ ${visual.label}</div>
+            <button
+              id="citizen-view-btn-${inc.id}"
+              style="
+                width: 100%;
+                background: #24638F;
+                color: white;
+                font-size: 11px;
+                font-weight: 700;
+                padding: 7px 10px;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+              "
+            >
+              View Issue →
+            </button>
+          </div>
+        `;
+
+        marker.bindPopup(popupHtml, { autoPan: true, autoPanPadding: [28, 56], keepInView: false });
+
+        marker.on('popupopen', () => {
+          const btn = document.getElementById(`citizen-view-btn-${inc.id}`);
+          if (btn) {
+            btn.onclick = () => {
+              onIssueClickRef.current?.(inc.id);
+            };
+          }
+        });
+
+        markersRef.current[inc.id] = marker;
+        return;
+      }
+
+      /* ---------------- Admin marker (unchanged operational layer) ---------------- */
       const isSelected = inc.id === selectedIncidentId;
       const isCritical = inc.riskScore >= 80;
       const isHigh = inc.riskScore >= 70 && inc.riskScore < 80;
@@ -210,7 +364,47 @@ export const CivicMap: React.FC<CivicMapProps> = ({
         markersRef.current[selectedIncidentId].openPopup();
       }
     }
-  }, [incidents, selectedIncidentId]);
+  }, [incidents, selectedIncidentId, variant, userLocationKey]);
+
+  // Citizen: approximate "you are here" dot (never other citizens' locations).
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !userLocation) return;
+
+    const icon = L.divIcon({
+      html: `
+        <div style="transform: translate(-50%, -50%); position: relative;">
+          <div class="marker-pulse" style="position: absolute; inset: -8px; border-radius: 50%; background: rgba(36, 99, 143, 0.25);"></div>
+          <div style="
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #24638F;
+            border: 2.5px solid #FFFFFF;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+          "></div>
+        </div>
+      `,
+      className: 'custom-civic-marker',
+      iconSize: [16, 16]
+    });
+
+    const marker = L.marker(userLocation, { icon }).addTo(map);
+    marker.bindTooltip('Your approximate location', { direction: 'top', offset: [0, -10] });
+
+    return () => {
+      marker.remove();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLocationKey]);
+
+  // Citizen: fly to a requested focus target (locate / recenter).
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !focusKey) return;
+    const [lat, lng] = focusKey.split(',').map(Number);
+    map.flyTo([lat, lng], Math.max(map.getZoom(), 14), { animate: true, duration: 0.6 });
+  }, [focusKey]);
 
   // Leaflet measures its canvas at creation time. Keep that canvas aligned with
   // any grid, drawer, sidebar, or viewport change without reloading tiles.
@@ -233,23 +427,47 @@ export const CivicMap: React.FC<CivicMapProps> = ({
       <div ref={mapContainerRef} className="absolute inset-0" style={{ width: '100%' }} />
 
       {/* Map Legend Overlay */}
-      <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[#E5E3DC] shadow-md text-left text-xs flex flex-wrap items-center gap-3">
-        <span className="font-bold text-[10px] text-[#7E8592] uppercase tracking-wider">
-          Signal Legend:
-        </span>
-        <div className="flex items-center gap-1.5 text-[11px]">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#C54E38]"></span>
-          <span>Critical / High Risk (&ge;70)</span>
+      {isCitizen ? (
+        <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[#E5E3DC] shadow-md text-left text-xs flex flex-wrap items-center gap-2.5">
+          <span className="font-bold text-[10px] text-[#7E8592] uppercase tracking-wider">
+            Public issues:
+          </span>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#4E5D6C]"></span>
+            <span>Reported</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#24638F]"></span>
+            <span>Assigned</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#2F6355]"></span>
+            <span>In Progress</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#1E6B42]"></span>
+            <span>Resolved</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px]">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#C88427]"></span>
-          <span>Medium Risk (50-69)</span>
+      ) : (
+        <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur-md px-3 py-2 rounded-lg border border-[#E5E3DC] shadow-md text-left text-xs flex flex-wrap items-center gap-3">
+          <span className="font-bold text-[10px] text-[#7E8592] uppercase tracking-wider">
+            Signal Legend:
+          </span>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#C54E38]"></span>
+            <span>Critical / High Risk (&ge;70)</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#C88427]"></span>
+            <span>Medium Risk (50-69)</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="w-2.5 h-2.5 rounded-full border border-dashed border-[#C88427]"></span>
+            <span>Recurring Hotspot</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px]">
-          <span className="w-2.5 h-2.5 rounded-full border border-dashed border-[#C88427]"></span>
-          <span>Recurring Hotspot</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

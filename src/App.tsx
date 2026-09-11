@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CivicProvider, useCivic } from './context/CivicContext';
 import { Header } from './components/common/Header';
 import { Sidebar } from './components/common/Sidebar';
@@ -28,6 +28,10 @@ import {
   FileText
 } from 'lucide-react';
 import { MunicipalTab } from './types/civic';
+import { Persona } from './types/civic';
+import { RoleSelectionPage } from './components/entry/RoleSelectionPage';
+import { CitizenWorkspace } from './components/citizen/CitizenWorkspace';
+import { FieldWorkspace } from './components/field/FieldWorkspace';
 
 const MainShell: React.FC = () => {
   const { persona, activeTab, setActiveTab } = useCivic();
@@ -109,9 +113,71 @@ const MainShell: React.FC = () => {
 };
 
 export default function App() {
+  const [pathname, setPathname] = useState(() => window.location.pathname);
+
+  useEffect(() => {
+    const onPopState = () => setPathname(window.location.pathname);
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const navigate = (path: string) => {
+    window.history.pushState({}, '', path);
+    setPathname(path);
+  };
+
+  const citizenRoute = pathname === '/citizen' ? 'home' : pathname === '/citizen/map' ? 'map' : pathname === '/citizen/report' ? 'report' : pathname === '/citizen/reports' ? 'reports' : pathname === '/citizen/profile' ? 'profile' : null;
+
+  // Field Worker routing (includes /field/jobs/:id detail routes)
+  const jobMatch = pathname.match(/^\/field\/jobs\/([^/]+)$/);
+  const fieldJobId = jobMatch ? jobMatch[1] : null;
+  const fieldRoute: FieldRouteName | null =
+    pathname === '/field'
+      ? 'home'
+      : pathname === '/field/jobs' || fieldJobId
+        ? 'jobs'
+        : pathname === '/field/map'
+          ? 'map'
+          : pathname === '/field/history'
+            ? 'history'
+            : pathname === '/field/profile'
+              ? 'profile'
+              : null;
+
+  const routePersona: Record<string, Persona> = { '/admin': 'municipal' };
+  const personaForRoute = routePersona[pathname];
+
   return (
     <CivicProvider>
-      <MainShell />
+      {citizenRoute ? (
+        <RoutedCitizenWorkspace route={citizenRoute} onNavigate={navigate} />
+      ) : fieldRoute ? (
+        <RoutedFieldWorkspace route={fieldRoute} jobId={fieldJobId} onNavigate={navigate} />
+      ) : personaForRoute ? (
+        <RoutedWorkspace persona={personaForRoute} />
+      ) : (
+        <RoleSelectionPage onNavigate={navigate} />
+      )}
     </CivicProvider>
   );
 }
+
+export type FieldRouteName = 'home' | 'jobs' | 'map' | 'history' | 'profile';
+
+const RoutedWorkspace: React.FC<{ persona: Persona }> = ({ persona }) => {
+  const { setPersona } = useCivic();
+  useEffect(() => { setPersona(persona); }, [persona, setPersona]);
+  return <MainShell />;
+};
+
+const RoutedCitizenWorkspace: React.FC<{ route: 'home' | 'map' | 'report' | 'reports' | 'profile'; onNavigate: (path: string) => void }> = ({ route, onNavigate }) => {
+  const { setPersona } = useCivic();
+  useEffect(() => { setPersona('citizen'); }, [setPersona]);
+  return <CitizenWorkspace route={route} onNavigate={onNavigate} />;
+};
+
+const RoutedFieldWorkspace: React.FC<{ route: FieldRouteName; jobId: string | null; onNavigate: (path: string) => void }> = ({ route, jobId, onNavigate }) => {
+  const { setPersona } = useCivic();
+  useEffect(() => { setPersona('field_officer'); }, [setPersona]);
+  return <FieldWorkspace route={route} jobId={jobId} onNavigate={onNavigate} />;
+};

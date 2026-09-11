@@ -73,6 +73,7 @@ interface CivicContextType {
   }) => void;
   syncOfflineQueue: () => void;
   resolveFieldIncident: (incidentId: string, afterImageUrl: string, status: 'resolved' | 'needs_review') => void;
+  startFieldWork: (incidentId: string) => void;
   assignTeam: (incidentId: string, team: string, officer?: string) => void;
   markNotificationRead: (id: string) => void;
   clearAllNotifications: () => void;
@@ -320,9 +321,10 @@ export const CivicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setIncidents((prev) => [newInc, ...prev]);
     setSelectedIncidentId(newInc.id);
+    // Citizen-facing confirmation: outcomes only, no internal scoring language.
     showToast(
-      'Signal Received & Verified',
-      `Ticket #${newTicket} registered with 92% Civic Confidence.`,
+      'Your report was received',
+      'It has been queued for municipal review. We will notify you when its status changes.',
       'success'
     );
   };
@@ -395,6 +397,17 @@ export const CivicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   };
 
+  const startFieldWork = (incidentId: string) => {
+    setIncidents((prev) =>
+      prev.map((inc) =>
+        inc.id === incidentId && inc.status === 'assigned'
+          ? { ...inc, status: 'in_progress', lastUpdated: new Date().toISOString() }
+          : inc
+      )
+    );
+    showToast('Work started', 'The job is now marked as In Progress. Timestamp recorded.', 'info');
+  };
+
   const markNotificationRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
@@ -448,6 +461,7 @@ export const CivicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         submitCitizenReport,
         syncOfflineQueue,
         resolveFieldIncident,
+        startFieldWork,
         assignTeam,
         markNotificationRead,
         clearAllNotifications,
