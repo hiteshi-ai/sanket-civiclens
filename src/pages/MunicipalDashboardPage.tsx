@@ -1,186 +1,414 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getAnalytics,
-  getIncident,
   getIncidents,
   getMapIncidents,
-  getReport,
+  getIncident,
   getScoreExplanation,
 } from "../api";
-import { EmptyState } from "../components/EmptyState";
-import { IncidentDetailPanel } from "../components/IncidentDetailPanel";
-import { IncidentMap } from "../components/IncidentMap";
-import { PriorityQueue } from "../components/PriorityQueue";
 import type {
   AnalyticsOverview,
   Incident,
   IncidentDetail,
   MapIncident,
-  ReportDetail,
   ScoreExplanation,
 } from "../types";
-
-type LoadState = "loading" | "ready" | "error";
+import { IncidentMap } from "../components/IncidentMap";
+import { EmptyState } from "../components/EmptyState";
 
 export function MunicipalDashboardPage() {
   const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [mapIncidents, setMapIncidents] = useState<MapIncident[]>([]);
-  const [loadState, setLoadState] = useState<LoadState>("loading");
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedIncident, setSelectedIncident] = useState<IncidentDetail | null>(null);
-  const [selectedReport, setSelectedReport] = useState<ReportDetail | null>(null);
-  const [scoreExplanation, setScoreExplanation] = useState<ScoreExplanation | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<IncidentDetail | null>(null);
+  const [scoreExplanation, setScoreExplanation] =
+    useState<ScoreExplanation | null>(null);
 
-  const loadDashboard = useCallback(async () => {
-    setLoadState("loading");
-    setLoadError(null);
+  const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const [category, setCategory] = useState("");
+  const [status, setStatus] = useState("");
+
+  const loadDashboard = async () => {
+    setLoading(true);
+    setError("");
+
     try {
-      const filters = { category: categoryFilter, status: statusFilter };
-      const [overview, incidentList, markers] = await Promise.all([
+      const [analyticsData, incidentData, mapData] = await Promise.all([
         getAnalytics(),
-        getIncidents(filters),
-        getMapIncidents(filters),
+        getIncidents({
+          category: category || undefined,
+          status: status || undefined,
+        }),
+        getMapIncidents({
+          category: category || undefined,
+          status: status || undefined,
+        }),
       ]);
-      setAnalytics(overview);
-      setIncidents(incidentList);
-      setMapIncidents(markers);
-      setLoadState("ready");
-    } catch (error) {
-      setLoadState("error");
-      setLoadError(error instanceof Error ? error.message : "The dashboard could not be loaded.");
+
+      setAnalytics(analyticsData);
+      setIncidents(incidentData);
+      setMapIncidents(mapData);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load municipal intelligence.",
+      );
+    } finally {
+      setLoading(false);
     }
-  }, [categoryFilter, statusFilter]);
+  };
 
   useEffect(() => {
     void loadDashboard();
-  }, [loadDashboard]);
+  }, [category, status]);
 
-  const selectIncident = useCallback(async (incident: Incident | { id: string }) => {
-    setSelectedId(incident.id);
+  const openIncident = async (incidentId: string) => {
     setDetailLoading(true);
-    setDetailError(null);
-    setSelectedIncident(null);
-    setSelectedReport(null);
     setScoreExplanation(null);
+
     try {
-      const detail = await getIncident(incident.id);
-      const explanation = await getScoreExplanation(incident.id);
-      let report: ReportDetail | null = null;
-      const firstReportId = detail.fused_reports[0]?.report_id;
-      if (firstReportId) {
-        report = await getReport(firstReportId);
+      const detail = await getIncident(incidentId);
+      setSelected(detail);
+
+      try {
+        const explanation = await getScoreExplanation(incidentId);
+        setScoreExplanation(explanation);
+      } catch {
+        setScoreExplanation(null);
       }
-      setSelectedIncident(detail);
-      setScoreExplanation(explanation);
-      setSelectedReport(report);
-    } catch (error) {
-      setDetailError(error instanceof Error ? error.message : "The incident detail could not be loaded.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load incident details.",
+      );
     } finally {
       setDetailLoading(false);
     }
-  }, []);
+  };
 
-  const hasIncidents = incidents.length > 0 || mapIncidents.length > 0;
+  const highRisk = useMemo(
+    () => incidents.filter((incident) => incident.risk_score >= 70).length,
+    [incidents],
+  );
+
+  const waitingTooLong = useMemo(
+    () => incidents.filter((incident) => incident.waiting_days >= 7).length,
+    [incidents],
+  );
 
   return (
-    <div className="content-stack dashboard-page">
-      <section className="page-intro dashboard-intro">
+    <div className="command-center">
+      <section className="dashboard-intro page-intro">
         <div>
-          <p className="eyebrow">Municipal command view</p>
-          <h2>Chandigarh civic pulse</h2>
-          <p>Review real citizen reports and the incidents SANKET has derived from them.</p>
+          <p className="eyebrow">Municipal intelligence</p>
+          <h2>Command Center</h2>
+          <p>
+            Evidence-backed civic intelligence for Chandigarh. Every metric
+            below is loaded from the municipal API.
+          </p>
         </div>
-        <button className="secondary-button" onClick={() => void loadDashboard()} disabled={loadState === "loading"}>
-          {loadState === "loading" ? "Refreshing…" : "Refresh data"}
-          <span aria-hidden="true">↻</span>
+
+        <button
+          className="secondary-button"
+          onClick={() => void loadDashboard()}
+        >
+          ↻ Refresh intelligence
         </button>
       </section>
 
-      {loadState === "error" ? (
+      {error && (
         <div className="error-banner large-error">
-          <strong>Dashboard unavailable</strong>
-          <span>{loadError}</span>
-          <button className="text-button" onClick={() => void loadDashboard()}>Try again</button>
+          <span>{error}</span>
+
+          <button
+            className="secondary-button"
+            onClick={() => void loadDashboard()}
+          >
+            Retry
+          </button>
         </div>
-      ) : (
-        <>
-          <section className="metric-grid" aria-label="Live municipal metrics">
-            <MetricCard label="Total reports" value={analytics?.total_reports} />
-            <MetricCard label="Active incidents" value={analytics?.open_incidents} />
-            <MetricCard label="High-risk incidents" value={analytics?.high_risk_incidents} tone="warm" />
-            <MetricCard label="Verified closed" value={analytics?.verified_closed_incidents} tone="dark" />
-          </section>
+      )}
 
-          <section className="dashboard-grid">
-            <div className="card queue-card">
-              <div className="card-heading">
-                <div>
-                  <p className="eyebrow">Operational queue</p>
-                  <h3>Priority incidents</h3>
-                </div>
-                <span className="record-count">{incidents.length} records</span>
-              </div>
-              <div className="filter-row">
-                <label>
-                  <span className="sr-only">Filter by category</span>
-                  <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
-                    <option value="">All categories</option>
-                    <option value="POTHOLE_ROAD_DAMAGE">Pothole / road damage</option>
-                    <option value="GARBAGE_OVERFLOW">Garbage overflow</option>
-                    <option value="BROKEN_STREETLIGHT">Broken streetlight</option>
-                    <option value="DRAINAGE_WATERLOGGING">Drainage / waterlogging</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </label>
-                <label>
-                  <span className="sr-only">Filter by status</span>
-                  <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                    <option value="">All statuses</option>
-                    <option value="OPEN">Open</option>
-                    <option value="IN_TRIAGE">In triage</option>
-                    <option value="ASSIGNED">Assigned</option>
-                    <option value="IN_PROGRESS">In progress</option>
-                    <option value="PENDING_VERIFICATION">Pending verification</option>
-                    <option value="VERIFIED_CLOSED">Verified closed</option>
-                  </select>
-                </label>
-              </div>
-              <PriorityQueue incidents={incidents} selectedId={selectedId} onSelect={(item) => void selectIncident(item)} />
+      <section className="metric-grid">
+        <MetricCard
+          label="Open incidents"
+          value={analytics?.open_incidents}
+          tone="teal"
+          note="Live backend count"
+        />
+
+        <MetricCard
+          label="High-risk incidents"
+          value={loading ? undefined : highRisk}
+          tone="warm"
+          note="Risk score ≥ 70"
+        />
+
+        <MetricCard
+          label="Waiting too long"
+          value={loading ? undefined : waitingTooLong}
+          tone="dark"
+          note="Waiting ≥ 7 days"
+        />
+
+        <MetricCard
+          label="Civic confidence"
+          value={
+            analytics?.average_civic_confidence != null
+              ? `${Math.round(analytics.average_civic_confidence)}%`
+              : undefined
+          }
+          tone="light"
+          note={
+            analytics?.average_civic_confidence != null
+              ? "Evidence-backed average"
+              : "Unavailable without evidence"
+          }
+        />
+      </section>
+
+      <section className="dashboard-grid">
+        <div className="queue-card dashboard-card">
+          <div className="section-heading-row">
+            <div>
+              <p className="eyebrow">Live workload</p>
+              <h3>Priority Queue</h3>
             </div>
 
-            <div className="card map-card">
-              <div className="card-heading">
-                <div>
-                  <p className="eyebrow">Geospatial view</p>
-                  <h3>Chandigarh incidents</h3>
-                </div>
-                <span className="map-legend"><i /> API coordinates</span>
-              </div>
-              <IncidentMap incidents={mapIncidents} onSelect={(id) => void selectIncident({ id })} />
-            </div>
-          </section>
+            <span className="live-badge">● LIVE</span>
+          </div>
 
-          {!hasIncidents && loadState === "ready" && (
+          <div className="filter-row">
+            <label>
+              <span className="sr-only">Category</span>
+
+              <select
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+              >
+                <option value="">All categories</option>
+                <option value="POTHOLE_ROAD_DAMAGE">Road damage</option>
+                <option value="GARBAGE_OVERFLOW">Garbage overflow</option>
+                <option value="BROKEN_STREETLIGHT">Streetlight</option>
+                <option value="DRAINAGE_WATERLOGGING">
+                  Drainage / waterlogging
+                </option>
+                <option value="OTHER">Other</option>
+              </select>
+            </label>
+
+            <label>
+              <span className="sr-only">Status</span>
+
+              <select
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+              >
+                <option value="">All statuses</option>
+                <option value="OPEN">Open</option>
+                <option value="IN_TRIAGE">In triage</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="IN_PROGRESS">In progress</option>
+                <option value="PENDING_VERIFICATION">
+                  Pending verification
+                </option>
+                <option value="VERIFIED_CLOSED">Verified closed</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </label>
+          </div>
+
+          {loading ? (
+            <div className="loading-block">
+              Loading live incidents…
+            </div>
+          ) : incidents.length === 0 ? (
             <EmptyState
-              title="No verified incidents yet."
-              description="Submit a real citizen report to create the first incident record."
+              title="No incidents found"
+              description="No matching incidents are currently available from the backend."
+            />
+          ) : (
+            <div className="incident-list">
+              {incidents.slice(0, 10).map((incident) => (
+                <button
+                  key={incident.id}
+                  className={
+                    selected?.id === incident.id
+                      ? "incident-row selected"
+                      : "incident-row"
+                  }
+                  onClick={() => void openIncident(incident.id)}
+                >
+                  <strong className="incident-priority">
+                    {incident.priority_score}
+                  </strong>
+
+                  <span className="incident-row-main">
+                    <strong>{incident.incident_number}</strong>
+
+                    <span>
+                      {formatCategory(incident.category)} ·{" "}
+                      {incident.sector_name ?? "Location unavailable"}
+                    </span>
+                  </span>
+
+                  <span className="incident-row-meta">
+                    <span
+                      className={`status status-${incident.status.toLowerCase()}`}
+                    >
+                      {formatStatus(incident.status)}
+                    </span>
+
+                    <span>
+                      Risk {incident.risk_score} ·{" "}
+                      {incident.waiting_days}d
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="map-card dashboard-card">
+          <div className="section-heading-row">
+            <div>
+              <p className="eyebrow">Geospatial intelligence</p>
+              <h3>Live Civic Map</h3>
+            </div>
+
+            <div className="map-legend">
+              <i />
+              Backend incidents
+            </div>
+          </div>
+
+          {mapIncidents.length === 0 && !loading ? (
+            <EmptyState
+              title="No mapped incidents"
+              description="Historical or live map data is unavailable."
+            />
+          ) : (
+            <IncidentMap
+              incidents={mapIncidents}
+              onSelect={(incidentId) => void openIncident(incidentId)}
             />
           )}
+        </div>
+      </section>
 
-          <IncidentDetailPanel
-            incident={selectedIncident}
-            explanation={scoreExplanation}
-            report={selectedReport}
-            loading={detailLoading}
-            error={detailError}
-          />
-        </>
+      {detailLoading && (
+        <div className="detail-panel">
+          <div className="loading-block">
+            Loading incident intelligence…
+          </div>
+        </div>
+      )}
+
+      {selected && !detailLoading && (
+        <section className="detail-panel">
+          <div className="detail-header">
+            <div>
+              <p className="eyebrow">Incident intelligence</p>
+              <h2>{selected.incident_number}</h2>
+            </div>
+
+            <button
+              className="secondary-button"
+              onClick={() => {
+                setSelected(null);
+                setScoreExplanation(null);
+              }}
+            >
+              Close
+            </button>
+          </div>
+
+          <p className="detail-category">
+            {formatCategory(selected.category)}
+          </p>
+
+          <div className="detail-location">
+            <span>Location</span>
+
+            <strong>
+              {selected.sector_name ?? "Location unavailable"}
+            </strong>
+
+            <small>
+              {selected.latitude.toFixed(6)},{" "}
+              {selected.longitude.toFixed(6)}
+            </small>
+          </div>
+
+          <div className="score-grid">
+            <Score
+              label="Severity"
+              value={selected.severity}
+            />
+
+            <Score
+              label="Confidence"
+              value={selected.confidence_score}
+            />
+
+            <Score
+              label="Risk"
+              value={selected.risk_score}
+            />
+          </div>
+
+          <div className="detail-section">
+            <h3>Evidence</h3>
+
+            <dl className="fact-list">
+              <div>
+                <dt>Reports</dt>
+                <dd>{selected.reports_count}</dd>
+              </div>
+
+              <div>
+                <dt>Waiting</dt>
+                <dd>{selected.waiting_days} days</dd>
+              </div>
+
+              <div>
+                <dt>Recurrence</dt>
+                <dd>{selected.recurrence_status}</dd>
+              </div>
+
+              <div>
+                <dt>Status</dt>
+                <dd>{formatStatus(selected.status)}</dd>
+              </div>
+            </dl>
+          </div>
+
+          {scoreExplanation && (
+            <div className="detail-section score-explanation">
+              <div className="formula-line">
+                <span>{scoreExplanation.formula_version}</span>
+
+                <strong>{scoreExplanation.score_value}</strong>
+              </div>
+
+              <p>{scoreExplanation.label}</p>
+
+              <pre>
+                {JSON.stringify(
+                  scoreExplanation.evidence_breakdown,
+                  null,
+                  2,
+                )}
+              </pre>
+            </div>
+          )}
+        </section>
       )}
     </div>
   );
@@ -189,17 +417,53 @@ export function MunicipalDashboardPage() {
 function MetricCard({
   label,
   value,
-  tone = "teal",
+  tone,
+  note,
 }: {
   label: string;
-  value: number | null | undefined;
-  tone?: "teal" | "warm" | "dark";
+  value?: number | string;
+  tone: "teal" | "warm" | "dark" | "light";
+  note: string;
 }) {
   return (
-    <div className={`metric-card metric-${tone}`}>
+    <article className={`metric-card metric-${tone}`}>
       <span>{label}</span>
-      <strong>{value === null || value === undefined ? "Data unavailable" : value}</strong>
-      <small>From live database records</small>
+
+      <strong>{value ?? "—"}</strong>
+
+      <small>{note}</small>
+    </article>
+  );
+}
+
+function Score({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | null;
+}) {
+  return (
+    <div>
+      <span>{label}</span>
+
+      <strong>
+        {value == null ? "—" : value}
+      </strong>
     </div>
   );
+}
+
+function formatCategory(category: string) {
+  return category
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatStatus(status: string) {
+  return status
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
