@@ -45,7 +45,7 @@ const MainShell: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen isolate bg-[#FBFBF9] text-[#191B1F] flex flex-col selection:bg-[#2C5E48]/20 selection:text-[#1E4333]">
+    <div className="h-[100dvh] overflow-hidden isolate bg-[#FBFBF9] text-[#191B1F] flex flex-col selection:bg-[#2C5E48]/20 selection:text-[#1E4333]">
       <Header />
 
       {/* Main Content Router based on Persona */}
