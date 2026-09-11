@@ -154,8 +154,8 @@ export const IncidentsView: React.FC = () => {
         </div>
 
         {/* Secondary Toggles */}
-        <div className="flex items-center justify-between pt-2 border-t border-[#F4F3EF] text-xs">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-2 pt-2 border-t border-[#F4F3EF] text-xs sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <label className="flex items-center gap-1.5 cursor-pointer text-[#565C68] hover:text-[#191B1F]">
               <input
                 type="checkbox"
@@ -174,7 +174,7 @@ export const IncidentsView: React.FC = () => {
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 text-[11px] font-bold text-[#C54E38] hover:underline"
+              className="self-start flex items-center gap-1 text-[11px] font-bold text-[#C54E38] hover:underline"
             >
               <X className="w-3.5 h-3.5" />
               <span>Reset Filters</span>

@@ -26,7 +26,7 @@ export const EvidenceDrawer: React.FC = () => {
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm animate-fade-in">
       <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between border-l border-[#E5E3DC] text-left animate-slide-left">
         {/* Header */}
-        <div className="p-5 border-b border-[#E5E3DC] bg-[#FAF9F5] flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-[#E5E3DC] bg-[#FAF9F5] flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#EBF7EF] border border-[#C8EAD4] text-[#1E6B42] flex items-center justify-center">
               <ShieldCheck className="w-4 h-4" />
@@ -49,7 +49,7 @@ export const EvidenceDrawer: React.FC = () => {
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1">
           {/* Main Confidence Banner */}
           <div className="p-4 rounded-xl bg-[#EBF7EF] border border-[#C8EAD4] flex items-center justify-between">
             <div>
@@ -90,7 +90,7 @@ export const EvidenceDrawer: React.FC = () => {
                   <Users className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:items-center">
                     <span className="text-xs font-bold text-[#191B1F]">
                       Independent Citizen Reports
                     </span>
@@ -112,7 +112,7 @@ export const EvidenceDrawer: React.FC = () => {
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:items-center">
                     <span className="text-xs font-bold text-[#191B1F]">
                       Spatial Proximity Cluster
                     </span>
@@ -134,7 +134,7 @@ export const EvidenceDrawer: React.FC = () => {
                   <Eye className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:items-center">
                     <span className="text-xs font-bold text-[#191B1F]">
                       Computer Vision Correlation
                     </span>
@@ -156,7 +156,7 @@ export const EvidenceDrawer: React.FC = () => {
                   <Clock className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:items-center">
                     <span className="text-xs font-bold text-[#191B1F]">
                       Temporal Influx Cluster
                     </span>

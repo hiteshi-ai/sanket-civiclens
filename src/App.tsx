@@ -46,14 +46,14 @@ const MainShell: React.FC = () => {
 
       {/* Main Content Router based on Persona */}
       {persona === 'municipal' && (
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden">
           {/* Desktop Left Sidebar */}
           <div className="hidden md:block">
             <Sidebar />
           </div>
 
           {/* Main Scrollable View Area */}
-          <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-8 max-w-7xl mx-auto w-full">
+          <main className="flex-1 min-w-0 overflow-y-auto overscroll-contain px-4 sm:px-6 lg:px-8 py-5 sm:py-6 pb-24 md:pb-8 max-w-7xl mx-auto w-full">
             {activeTab === 'dashboard' && <DashboardView />}
             {activeTab === 'incidents' && <IncidentsView />}
             {activeTab === 'priority_queue' && <PriorityQueueView />}
@@ -66,14 +66,14 @@ const MainShell: React.FC = () => {
           </main>
 
           {/* Mobile Bottom Navigation Bar */}
-          <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-[#E5E3DC] z-30 flex items-center justify-around py-2 px-1 shadow-lg">
+          <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-[#E5E3DC] z-30 flex items-center justify-around px-1 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg">
             {mobileNavItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg text-[10px] font-semibold transition-colors ${
+                  className={`flex flex-1 flex-col items-center gap-1 py-1 px-1 rounded-lg text-[10px] font-semibold transition-colors ${
                     isActive ? 'text-[#2C5E48] font-bold' : 'text-[#7E8592]'
                   }`}
                 >
@@ -87,13 +87,13 @@ const MainShell: React.FC = () => {
       )}
 
       {persona === 'field_officer' && (
-        <main className="flex-1 px-4 py-6 max-w-xl mx-auto w-full">
+        <main className="flex-1 px-4 py-5 sm:py-6 max-w-xl mx-auto w-full">
           <FieldOfficerView />
         </main>
       )}
 
       {persona === 'citizen' && (
-        <main className="flex-1 px-4 py-6 max-w-xl mx-auto w-full">
+        <main className="flex-1 px-4 py-5 sm:py-6 max-w-xl mx-auto w-full">
           <CitizenView />
         </main>
       )}

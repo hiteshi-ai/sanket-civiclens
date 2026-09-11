@@ -47,10 +47,10 @@ export const Header: React.FC = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-[#E5E3DC] px-4 lg:px-8 py-3 transition-colors">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-[#E5E3DC] px-3 sm:px-4 lg:px-8 py-3 transition-colors">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Organization & Context */}
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="relative">
             <button
               onClick={() => setIsOrgDropdownOpen(!isOrgDropdownOpen)}
@@ -85,7 +85,7 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          <DemoBadge label="DEMO ENVIRONMENT" />
+          <span className="hidden min-[380px]:inline"><DemoBadge label="DEMO ENVIRONMENT" /></span>
         </div>
 
         {/* Center: Persona Switcher (Allows instant switching to Field Officer or Citizen) */}
@@ -126,7 +126,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Right Controls: Offline Simulator, Notifications, User Profile */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
           {/* Offline Simulator Switcher */}
           <div className="flex items-center gap-1.5">
             <button
@@ -141,7 +141,7 @@ export const Header: React.FC = () => {
               {isOffline ? (
                 <>
                   <WifiOff className="w-3.5 h-3.5 text-[#C54E38]" />
-                  <span className="font-semibold">Simulate: Offline</span>
+                  <span className="hidden sm:inline font-semibold">Simulate: Offline</span>
                 </>
               ) : (
                 <>
@@ -182,7 +182,7 @@ export const Header: React.FC = () => {
 
             {/* Notifications Dropdown */}
             {isNotifOpen && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-[#E5E3DC] py-2 z-50">
+              <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-96 bg-white rounded-xl shadow-2xl border border-[#E5E3DC] py-2 z-50">
                 <div className="flex items-center justify-between px-4 py-2 border-b border-[#E5E3DC]">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-[#191B1F]">Municipal Alerts</span>
@@ -250,10 +250,10 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Mobile persona switcher */}
-      <div className="md:hidden mt-2 pt-2 border-t border-[#E5E3DC] flex items-center justify-between">
+      <div className="md:hidden mt-2 pt-2 border-t border-[#E5E3DC] grid grid-cols-3 gap-1">
         <button
           onClick={() => setPersona('municipal')}
-          className={`px-2.5 py-1 rounded text-xs font-semibold ${
+          className={`w-full px-1 py-1.5 rounded text-[11px] font-semibold whitespace-nowrap ${
             persona === 'municipal' ? 'bg-[#2C5E48] text-white' : 'text-[#565C68]'
           }`}
         >
@@ -261,7 +261,7 @@ export const Header: React.FC = () => {
         </button>
         <button
           onClick={() => setPersona('field_officer')}
-          className={`px-2.5 py-1 rounded text-xs font-semibold ${
+          className={`w-full px-1 py-1.5 rounded text-[11px] font-semibold whitespace-nowrap ${
             persona === 'field_officer' ? 'bg-[#C88427] text-white' : 'text-[#565C68]'
           }`}
         >
@@ -269,7 +269,7 @@ export const Header: React.FC = () => {
         </button>
         <button
           onClick={() => setPersona('citizen')}
-          className={`px-2.5 py-1 rounded text-xs font-semibold ${
+          className={`w-full px-1 py-1.5 rounded text-[11px] font-semibold whitespace-nowrap ${
             persona === 'citizen' ? 'bg-[#24638f] text-white' : 'text-[#565C68]'
           }`}
         >
