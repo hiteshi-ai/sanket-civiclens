@@ -17,8 +17,8 @@ const DEFAULT_DOMAINS: DomainItem[] = [
     id: 'pothole',
     categoryKey: 'pothole',
     name: 'Pothole & Surface',
-    count: 8,
-    pct: 27,
+    count: 0,
+    pct: 0,
     color: 'bg-[#C54E38]',
     barHex: '#C54E38'
   },
@@ -26,8 +26,8 @@ const DEFAULT_DOMAINS: DomainItem[] = [
     id: 'drainage',
     categoryKey: 'drainage',
     name: 'Storm Drainage',
-    count: 7,
-    pct: 23,
+    count: 0,
+    pct: 0,
     color: 'bg-[#24638f]',
     barHex: '#24638f'
   },
@@ -35,8 +35,8 @@ const DEFAULT_DOMAINS: DomainItem[] = [
     id: 'road_damage',
     categoryKey: 'road_damage',
     name: 'Road Damage & Subbase',
-    count: 6,
-    pct: 20,
+    count: 0,
+    pct: 0,
     color: 'bg-[#8c503b]',
     barHex: '#8c503b'
   },
@@ -44,8 +44,8 @@ const DEFAULT_DOMAINS: DomainItem[] = [
     id: 'streetlight',
     categoryKey: 'streetlight',
     name: 'Streetlight & Electrical',
-    count: 5,
-    pct: 17,
+    count: 0,
+    pct: 0,
     color: 'bg-[#C88427]',
     barHex: '#C88427'
   },
@@ -53,8 +53,8 @@ const DEFAULT_DOMAINS: DomainItem[] = [
     id: 'waste',
     categoryKey: 'waste',
     name: 'Solid Waste & Sanitation',
-    count: 4,
-    pct: 13,
+    count: 0,
+    pct: 0,
     color: 'bg-[#6c584c]',
     barHex: '#6c584c'
   }
@@ -67,7 +67,7 @@ interface IssueVolumeByDomainProps {
 
 export const IssueVolumeByDomain: React.FC<IssueVolumeByDomainProps> = ({
   data = DEFAULT_DOMAINS,
-  totalSampleLabel = '30 Sample Incidents'
+  totalSampleLabel = '0 Verified Incidents'
 }) => {
   const { setCategoryFilter, setActiveTab, showToast } = useCivic();
 

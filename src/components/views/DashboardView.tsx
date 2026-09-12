@@ -37,9 +37,9 @@ export const DashboardView: React.FC = () => {
   const recurringCount = incidents.filter((i) => i.isRecurring).length;
 
   // Average confidence across active incidents
-  const avgConfidence = Math.round(
-    incidents.reduce((acc, curr) => acc + curr.confidenceScore, 0) / incidents.length
-  );
+  const avgConfidence = incidents.length
+    ? Math.round(incidents.reduce((acc, curr) => acc + curr.confidenceScore, 0) / incidents.length)
+    : 0;
 
   // Top attention list (sorted by risk desc)
   const needsAttentionList = [...incidents]

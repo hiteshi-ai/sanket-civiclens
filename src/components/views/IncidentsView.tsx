@@ -85,7 +85,7 @@ export const IncidentsView: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <DemoBadge label="30 DETERMINISTIC RECORDS" />
+          <DemoBadge label={`${filteredIncidents.length} VERIFIED RECORDS`} />
         </div>
       </div>
 

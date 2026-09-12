@@ -5,7 +5,7 @@
  * - Map: SAME shared Leaflet CivicMap (public layer, no Admin intelligence),
  *   with the worker's own approximate location.
  * - History: completed/verified jobs, lightweight.
- * - Profile: worker identity (mock), prototype workspace switcher.
+ * - Profile: worker identity, workspace switcher.
  */
 import React, { useMemo, useState } from 'react';
 import {

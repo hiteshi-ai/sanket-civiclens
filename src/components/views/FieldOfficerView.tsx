@@ -25,10 +25,10 @@ export const FieldOfficerView: React.FC = () => {
     isOffline
   } = useCivic();
 
-  // Pick assigned incident or first critical incident
+  // Pick assigned incident or first available incident
   const assigned =
-    incidents.find((i) => i.id === 'inc-001') ||
     incidents.find((i) => i.status === 'assigned') ||
+    incidents.find((i) => i.status === 'in_progress') ||
     incidents[0];
 
   const [step, setStep] = useState<'dispatch' | 'repair_camera' | 'verification_match' | 'completed'>('dispatch');
@@ -86,6 +86,34 @@ export const FieldOfficerView: React.FC = () => {
     setIsOnTheWay(false);
     setCapturedPhoto(null);
   };
+
+  if (!assigned) {
+    return (
+      <div className="max-w-md mx-auto space-y-4 text-left animate-fade-in pb-12">
+        <div className="p-4 rounded-xl bg-white border border-[#E5E3DC] shadow-xs flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-full bg-[#EBF3EE] border border-[#C5DDD0] text-[#2C5E48] font-black text-sm flex items-center justify-center">
+              VS
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-[#191B1F]">
+                Officer Vikramaditya Sen
+              </h2>
+              <span className="text-[11px] text-[#7E8592] block">
+                PWD Rapid Response • Sector 17 Beat
+              </span>
+            </div>
+          </div>
+          <DemoBadge label="FIELD DISPATCH" />
+        </div>
+        <div className="p-8 text-center bg-white rounded-2xl border border-[#E5E3DC] shadow-xs space-y-2">
+          <Truck className="w-8 h-8 text-[#7E8592] mx-auto" />
+          <h3 className="text-sm font-bold text-[#191B1F]">No Active Dispatches</h3>
+          <p className="text-xs text-[#565C68]">All assigned field repairs have been resolved or verified.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto space-y-4 text-left animate-fade-in pb-12">
@@ -219,7 +247,7 @@ export const FieldOfficerView: React.FC = () => {
             Position camera at the completed work zone. SANKET will perform spatial matching against the original citizen report coordinates.
           </p>
 
-          {/* Camera Viewfinder Mock */}
+          {/* Camera Viewfinder Interface */}
           <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-[#2C5E48] bg-[#191B1F] h-64 flex flex-col items-center justify-center text-white p-4">
             <div className="absolute inset-4 border border-white/30 rounded-xl pointer-events-none flex items-center justify-center">
               <div className="w-8 h-8 border-t-2 border-l-2 border-emerald-400 absolute top-2 left-2"></div>

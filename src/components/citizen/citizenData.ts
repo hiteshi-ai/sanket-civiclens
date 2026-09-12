@@ -1,10 +1,9 @@
 /**
  * Citizen-facing data helpers & prototype data.
  *
- * IMPORTANT: All incident data shown to citizens is PROTOTYPE / DEMO data
- * derived from the shared mock incident store. Nothing here represents live
- * municipal data, and no private citizen information is ever exposed —
- * only public civic information (issue type, approximate area, status).
+ * IMPORTANT: All incident data shown to citizens is derived from the
+ * shared backend incident store. Only public civic information is exposed
+ * (issue type, approximate area, status).
  */
 import type { Incident, IncidentStatus, IssueCategory } from '../../types/civic';
 

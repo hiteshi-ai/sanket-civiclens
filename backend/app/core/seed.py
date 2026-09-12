@@ -81,8 +81,11 @@ CHANDIGARH_SECTORS = [
 ]
 
 
-def seed_database_if_empty(db: Session):
-    """Initializes standard baseline data if the database is unpopulated."""
+def init_foundational_data(db: Session):
+    """
+    Initializes technically necessary foundational reference data (Jurisdiction & Sectors).
+    This contains zero user records or incident data, only administrative boundaries.
+    """
     from backend.app.core.database import Base, engine
     Base.metadata.create_all(bind=engine)
 
@@ -115,8 +118,19 @@ def seed_database_if_empty(db: Session):
             )
             db.add(sec)
         db.flush()
+    db.commit()
 
-    # 3. Users / Demo Accounts
+
+def seed_development_demo_data(db: Session):
+    """
+    DEVELOPMENT-ONLY: Seeds optional demo accounts and sample baseline incidents.
+    MUST NOT be called in production environments.
+    """
+    import logging
+    logger = logging.getLogger("sanket.seed")
+    logger.info("Initializing development demo accounts and baseline incident telemetry.")
+
+    # 1. Users / Demo Accounts
     if db.query(User).count() == 0:
         default_pw_hash = hash_password("change-me")
         citizen_user = User(
@@ -328,3 +342,33 @@ def seed_database_if_empty(db: Session):
                 db.add(assignment)
 
     db.commit()
+
+
+def seed_database_if_empty(db: Session):
+    """
+    Initializes technically necessary foundational reference data (Jurisdiction, Sectors).
+    Does NOT populate demo users or synthetic incidents into production databases.
+    Demo data is strictly opt-in via DEMO_MODE or SEED_DEMO_DATA environment variables.
+    """
+    import os
+    import logging
+    from backend.app.core.config import settings
+
+    logger = logging.getLogger("sanket.seed")
+
+    # 1. Technically necessary foundational data (always initialized)
+    init_foundational_data(db)
+
+    # 2. Guarded demo/sample data
+    should_seed_demo = settings.DEMO_MODE or os.getenv("SEED_DEMO_DATA", "false").lower() == "true"
+    is_production = settings.ENVIRONMENT.lower() in ("production", "prod")
+
+    if should_seed_demo:
+        if is_production:
+            logger.warning(
+                "CRITICAL: SEED_DEMO_DATA was requested but ENVIRONMENT is 'production'. "
+                "Refusing to populate demo data into production database."
+            )
+            return
+        seed_development_demo_data(db)
+

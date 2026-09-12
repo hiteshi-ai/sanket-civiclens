@@ -24,7 +24,7 @@ import {
 export const CivicMemoryView: React.FC = () => {
   const { incidents, selectIncident, setIsDetailOpen, setActiveTab } = useCivic();
 
-  const [selectedSiteId, setSelectedSiteId] = useState<string>('inc-001');
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [memorySearch, setMemorySearch] = useState<string>('');
 
   // Recurring incidents
@@ -38,7 +38,9 @@ export const CivicMemoryView: React.FC = () => {
   );
 
   const selectedSite =
-    recurringIncidents.find((i) => i.id === selectedSiteId) || recurringIncidents[0];
+    (selectedSiteId ? recurringIncidents.find((i) => i.id === selectedSiteId) : null) ||
+    recurringIncidents[0] ||
+    null;
 
   return (
     <div className="space-y-6 text-left animate-fade-in">
