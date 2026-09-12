@@ -1,27 +1,19 @@
 import React, { useState } from 'react';
 import { useCivic } from '../../context/CivicContext';
-import { DemoBadge } from './Badges';
 import {
   Bell,
   Wifi,
   WifiOff,
   RefreshCw,
   Building2,
-  User,
-  Shield,
-  Smartphone,
-  HardHat,
-  ChevronDown,
   CheckCircle2,
   Clock,
   Flame,
   AlertTriangle
 } from 'lucide-react';
 
-export const Header: React.FC = () => {
+export const Header: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const {
-    persona,
-    setPersona,
     isOffline,
     toggleOffline,
     offlineQueue,
@@ -36,93 +28,15 @@ export const Header: React.FC = () => {
   } = useCivic();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [selectedOrg, setSelectedOrg] = useState('Municipal Corporation Chandigarh (Zone 1)');
-  const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
-
-  const orgs = [
-    'Municipal Corporation Chandigarh (Zone 1)',
-    'Chandigarh Engineering & PWD Department',
-    'Department of Public Health & Sanitation',
-    'Chandigarh Smart City Command Centre'
-  ];
-
   return (
     <header className="sticky top-0 z-40 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-[#E5E3DC] px-4 lg:px-8 py-3 transition-colors">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Left: Organization & Context */}
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <button
-              onClick={() => setIsOrgDropdownOpen(!isOrgDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F4F3EF] hover:bg-[#ECEAE3] border border-[#E5E3DC] text-xs font-semibold text-[#191B1F] transition-colors"
-            >
-              <Building2 className="w-3.5 h-3.5 text-[#2C5E48]" />
-              <span className="hidden sm:inline">{selectedOrg}</span>
-              <span className="sm:hidden">MCC Zone 1</span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#7E8592]" />
-            </button>
-
-            {isOrgDropdownOpen && (
-              <div className="absolute left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-[#E5E3DC] py-1 z-50">
-                <div className="px-3 py-1 text-[11px] font-semibold text-[#7E8592] uppercase tracking-wider">
-                  Select Municipal Jurisdiction
-                </div>
-                {orgs.map((org) => (
-                  <button
-                    key={org}
-                    onClick={() => {
-                      setSelectedOrg(org);
-                      setIsOrgDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-[#F4F3EF] transition-colors ${
-                      org === selectedOrg ? 'text-[#2C5E48] font-bold bg-[#EBF3EE]' : 'text-[#565C68]'
-                    }`}
-                  >
-                    {org}
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F4F3EF] border border-[#E5E3DC] text-xs font-semibold text-[#191B1F]">
+            <Building2 className="w-3.5 h-3.5 text-[#2C5E48]" />
+            <span>CivicLens</span>
           </div>
-
-          <DemoBadge label="DEMO ENVIRONMENT" />
-        </div>
-
-        {/* Center: Persona Switcher (Allows instant switching to Field Officer or Citizen) */}
-        <div className="hidden md:flex items-center bg-[#F4F3EF] p-1 rounded-lg border border-[#E5E3DC]">
-          <button
-            onClick={() => setPersona('municipal')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-              persona === 'municipal'
-                ? 'bg-white text-[#191B1F] shadow-sm'
-                : 'text-[#565C68] hover:text-[#191B1F]'
-            }`}
-          >
-            <Shield className="w-3.5 h-3.5 text-[#2C5E48]" />
-            Command Center
-          </button>
-          <button
-            onClick={() => setPersona('field_officer')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-              persona === 'field_officer'
-                ? 'bg-white text-[#191B1F] shadow-sm'
-                : 'text-[#565C68] hover:text-[#191B1F]'
-            }`}
-          >
-            <HardHat className="w-3.5 h-3.5 text-[#C88427]" />
-            Field Officer
-          </button>
-          <button
-            onClick={() => setPersona('citizen')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-              persona === 'citizen'
-                ? 'bg-white text-[#191B1F] shadow-sm'
-                : 'text-[#565C68] hover:text-[#191B1F]'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5 text-[#24638f]" />
-            Citizen Reporter
-          </button>
         </div>
 
         {/* Right Controls: Offline Simulator, Notifications, User Profile */}
@@ -246,35 +160,8 @@ export const Header: React.FC = () => {
               <span className="text-[10px] text-[#7E8592]">PWD Ops Lead</span>
             </div>
           </div>
+          <button onClick={onLogout} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-[#E5E3DC] text-[#565C68] hover:bg-[#F4F3EF]">Logout</button>
         </div>
-      </div>
-
-      {/* Mobile persona switcher */}
-      <div className="md:hidden mt-2 pt-2 border-t border-[#E5E3DC] flex items-center justify-between">
-        <button
-          onClick={() => setPersona('municipal')}
-          className={`px-2.5 py-1 rounded text-xs font-semibold ${
-            persona === 'municipal' ? 'bg-[#2C5E48] text-white' : 'text-[#565C68]'
-          }`}
-        >
-          Command
-        </button>
-        <button
-          onClick={() => setPersona('field_officer')}
-          className={`px-2.5 py-1 rounded text-xs font-semibold ${
-            persona === 'field_officer' ? 'bg-[#C88427] text-white' : 'text-[#565C68]'
-          }`}
-        >
-          Field Officer
-        </button>
-        <button
-          onClick={() => setPersona('citizen')}
-          className={`px-2.5 py-1 rounded text-xs font-semibold ${
-            persona === 'citizen' ? 'bg-[#24638f] text-white' : 'text-[#565C68]'
-          }`}
-        >
-          Citizen App
-        </button>
       </div>
     </header>
   );

@@ -2,9 +2,8 @@ import enum
 
 class UserRole(str, enum.Enum):
     CITIZEN = "CITIZEN"
-    FIELD_WORKER = "FIELD_WORKER"
-    MUNICIPAL_OFFICER = "MUNICIPAL_OFFICER"
-    ADMIN = "ADMIN"
+    FIELD_OFFICER = "FIELD_OFFICER"
+    COMMAND_ADMIN = "COMMAND_ADMIN"
 
 class CivicCategory(str, enum.Enum):
     POTHOLE_ROAD_DAMAGE = "POTHOLE_ROAD_DAMAGE"

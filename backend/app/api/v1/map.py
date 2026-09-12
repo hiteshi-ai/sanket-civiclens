@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Any
 from backend.app.core.database import get_db
 from backend.app.models.entities import Incident, Sector, IncidentReport
 from backend.app.models.enums import CivicCategory, IncidentStatus
+from backend.app.core.security import require_auth
 
 router = APIRouter(prefix="/map", tags=["GIS Map"])
 
@@ -14,7 +15,8 @@ def get_map_incidents(
     status: Optional[IncidentStatus] = Query(None),
     min_risk: Optional[float] = Query(None),
     min_confidence: Optional[float] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: dict = Depends(require_auth),
 ) -> List[Dict[str, Any]]:
     """
     Returns verified spatial incidents for Chandigarh GIS map.
@@ -56,7 +58,7 @@ def get_map_incidents(
     return results
 
 @router.get("/sectors")
-def get_chandigarh_sectors(db: Session = Depends(get_db)) -> List[Dict[str, Any]]:
+def get_chandigarh_sectors(db: Session = Depends(get_db), _current_user: dict = Depends(require_auth)) -> List[Dict[str, Any]]:
     """
     Returns official Chandigarh administrative sectors with boundary centers.
     """

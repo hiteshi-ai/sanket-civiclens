@@ -19,6 +19,8 @@ import { IncidentDetailDrawer } from './components/views/IncidentDetailDrawer';
 import { ScoreExplanationModal } from './components/intelligence/ScoreExplanationModal';
 import { EvidenceDrawer } from './components/intelligence/EvidenceDrawer';
 import { SmartClosureModal } from './components/intelligence/SmartClosureModal';
+import { AuthPage } from './pages/AuthPage';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import {
   LayoutDashboard,
   AlertOctagon,
@@ -31,7 +33,9 @@ import {
 import { MunicipalTab } from './types/civic';
 
 const MainShell: React.FC = () => {
-  const { persona, activeTab, setActiveTab } = useCivic();
+  const { user, logout } = useAuth();
+  const { activeTab, setActiveTab } = useCivic();
+  const persona = user?.role === 'COMMAND_ADMIN' ? 'municipal' : user?.role === 'FIELD_OFFICER' ? 'field_officer' : 'citizen';
 
   const mobileNavItems: { id: MunicipalTab; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -43,7 +47,7 @@ const MainShell: React.FC = () => {
 
   return (
     <div className="min-h-screen isolate bg-[#FBFBF9] text-[#191B1F] flex flex-col selection:bg-[#2C5E48]/20 selection:text-[#1E4333]">
-      <Header />
+      <Header onLogout={logout} />
 
       {/* Main Content Router based on Persona */}
       {persona === 'municipal' && (
@@ -111,8 +115,15 @@ const MainShell: React.FC = () => {
 
 export default function App() {
   return (
-    <CivicProvider>
-      <MainShell />
-    </CivicProvider>
+    <AuthProvider>
+      <AuthenticatedApp />
+    </AuthProvider>
   );
+}
+
+function AuthenticatedApp() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <div className="min-h-screen bg-[#FBFBF9] flex items-center justify-center text-sm text-[#565C68]">Restoring session…</div>;
+  if (!user) return <AuthPage />;
+  return <CivicProvider><MainShell /></CivicProvider>;
 }

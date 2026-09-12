@@ -19,7 +19,8 @@ def list_incidents(
     min_risk: Optional[float] = Query(None),
     min_confidence: Optional[float] = Query(None),
     limit: int = Query(100, le=200),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: dict = Depends(require_auth),
 ):
     q = db.query(Incident)
     if sector:
@@ -43,7 +44,7 @@ def list_incidents(
     return results
 
 @router.get("/{incident_id}", response_model=IncidentDetailResponse)
-def get_incident_detail(incident_id: str, db: Session = Depends(get_db)):
+def get_incident_detail(incident_id: str, db: Session = Depends(get_db), _current_user: dict = Depends(require_auth)):
     incident = db.query(Incident).filter(Incident.id == incident_id).first()
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
@@ -89,7 +90,7 @@ def get_incident_detail(incident_id: str, db: Session = Depends(get_db)):
     return resp
 
 @router.get("/{incident_id}/why-score", response_model=ScoreExplanationResponse)
-def get_why_score(incident_id: str, db: Session = Depends(get_db)):
+def get_why_score(incident_id: str, db: Session = Depends(get_db), _current_user: dict = Depends(require_auth)):
     incident = db.query(Incident).filter(Incident.id == incident_id).first()
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
@@ -125,7 +126,7 @@ def assign_incident(
     incident_id: str,
     req: IncidentAssignRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_roles([UserRole.MUNICIPAL_OFFICER.value, UserRole.ADMIN.value]))
+    current_user: dict = Depends(require_roles([UserRole.COMMAND_ADMIN.value]))
 ):
     incident = db.query(Incident).filter(Incident.id == incident_id).first()
     if not incident:

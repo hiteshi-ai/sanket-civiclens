@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from backend.app.core.database import get_db
-from backend.app.core.security import get_current_user_payload
+from backend.app.core.security import require_auth
 from backend.app.schemas.report import ReportCreate, ReportSyncBatchRequest
 from backend.app.sync.sync_manager import process_single_report_sync
 
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/sync", tags=["Offline Sync"])
 def sync_reports(
     batch: ReportSyncBatchRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_payload)
+    current_user: dict = Depends(require_auth)
 ):
     """
     Idempotent batch synchronization endpoint.
@@ -39,7 +39,7 @@ def sync_reports(
 def sync_single_report(
     report: ReportCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user_payload)
+    current_user: dict = Depends(require_auth)
 ):
     user_id = current_user["sub"] if current_user else None
     return process_single_report_sync(db, report, user_id)

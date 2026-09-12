@@ -154,19 +154,6 @@ export const SettingsView: React.FC = () => {
           </div>
 
           <div className="p-3 rounded-lg bg-[#FAF9F5] border border-[#E5E3DC]">
-            <span className="text-[10px] uppercase font-bold text-[#7E8592] block">Environment Tier</span>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="font-semibold text-[#C54E38]">DEMO ENVIRONMENT</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C54E38]"></span>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-lg bg-[#FAF9F5] border border-[#E5E3DC]">
-            <span className="text-[10px] uppercase font-bold text-[#7E8592] block">Data Mode</span>
-            <span className="font-semibold text-[#565C68] mt-0.5 block">Prototype / Simulated Data</span>
-          </div>
-
-          <div className="p-3 rounded-lg bg-[#FAF9F5] border border-[#E5E3DC]">
             <span className="text-[10px] uppercase font-bold text-[#7E8592] block">Last Configuration Update</span>
             <span className="font-semibold text-[#565C68] mt-0.5 block">Today • 22:35 IST</span>
           </div>

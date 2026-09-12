@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from backend.app.core.database import get_db
-from backend.app.core.security import get_current_user_payload
+from backend.app.core.security import get_current_user_payload, require_auth
 from backend.app.models.entities import Report, AIPrediction, IncidentReport
 from backend.app.schemas.report import ReportResponse, ReportDetailResponse, AIPredictionResponse
 
@@ -28,7 +28,7 @@ def list_reports(
     return q.order_by(Report.client_timestamp.desc()).limit(limit).all()
 
 @router.get("/{report_id}", response_model=ReportDetailResponse)
-def get_report(report_id: str, db: Session = Depends(get_db)):
+def get_report(report_id: str, db: Session = Depends(get_db), _current_user: dict = Depends(require_auth)):
     report = db.query(Report).filter(Report.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
