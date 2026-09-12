@@ -49,8 +49,8 @@ export function MunicipalDashboardPage() {
       ]);
 
       setAnalytics(analyticsData);
-      setIncidents(incidentData);
-      setMapIncidents(mapData);
+      setIncidents(Array.isArray(incidentData) ? incidentData : []);
+      setMapIncidents(Array.isArray(mapData) ? mapData : []);
     } catch (err) {
       setError(
         err instanceof Error

@@ -44,6 +44,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const message = payload && typeof payload.detail === "string" ? payload.detail : `The request failed (${response.status}).`;
     throw new ApiError(message, response.status);
   }
+  if (payload === null) {
+    throw new Error("The backend returned an empty response.");
+  }
   return payload as T;
 }
 
@@ -69,13 +72,17 @@ export function getIncidents(filters?: { category?: string; status?: string }) {
   if (filters?.category) params.set("category", filters.category);
   if (filters?.status) params.set("status", filters.status);
   const query = params.toString();
-  return request<Incident[]>(`/api/v1/incidents${query ? `?${query}` : ""}`);
+  return request<Incident[]>(`/api/v1/incidents${query ? `?${query}` : ""}`).then(
+    (incidents) => (Array.isArray(incidents) ? incidents : []),
+  );
 }
 export function getMapIncidents(filters?: { category?: string; status?: string }) {
   const params = new URLSearchParams();
   if (filters?.category) params.set("category", filters.category);
   if (filters?.status) params.set("status", filters.status);
   const query = params.toString();
-  return request<MapIncident[]>(`/api/v1/map/incidents${query ? `?${query}` : ""}`);
+  return request<MapIncident[]>(
+    `/api/v1/map/incidents${query ? `?${query}` : ""}`,
+  ).then((incidents) => (Array.isArray(incidents) ? incidents : []));
 }
 export { ApiError };
