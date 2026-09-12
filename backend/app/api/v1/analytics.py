@@ -5,11 +5,16 @@ from typing import Dict, Any
 from backend.app.core.database import get_db
 from backend.app.models.entities import Incident, Report, ClosureSubmission
 from backend.app.models.enums import IncidentStatus, CivicCategory
+from backend.app.core.security import require_roles
+from backend.app.models.enums import UserRole
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 @router.get("/overview")
-def get_analytics_overview(db: Session = Depends(get_db)) -> Dict[str, Any]:
+def get_analytics_overview(
+    db: Session = Depends(get_db),
+    _current_user: dict = Depends(require_roles([UserRole.COMMAND_ADMIN.value])),
+) -> Dict[str, Any]:
     """
     Returns computed municipal analytics from actual database records.
     Never fabricates metrics. If there are 0 records, returns 0 and honest unavailable indicators.

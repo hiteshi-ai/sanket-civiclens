@@ -11,7 +11,7 @@ router = APIRouter(prefix="/assignments", tags=["Assignments"])
 @router.get("/my")
 def get_my_assignments(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_roles([UserRole.FIELD_WORKER.value, UserRole.MUNICIPAL_OFFICER.value, UserRole.ADMIN.value]))
+    current_user: dict = Depends(require_roles([UserRole.FIELD_OFFICER.value, UserRole.COMMAND_ADMIN.value]))
 ):
     """
     Returns active assigned incidents for the authenticated field officer.
@@ -46,7 +46,7 @@ def get_my_assignments(
 @router.get("")
 def list_all_assignments(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_roles([UserRole.MUNICIPAL_OFFICER.value, UserRole.ADMIN.value]))
+    current_user: dict = Depends(require_roles([UserRole.COMMAND_ADMIN.value]))
 ):
     assignments = db.query(FieldAssignment).order_by(FieldAssignment.assigned_at.desc()).all()
     results = []

@@ -19,7 +19,7 @@ router = APIRouter(prefix="/closures", tags=["Closures & Verification"])
 def submit_smart_closure_match(
     req: ClosureMatchRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_roles([UserRole.FIELD_WORKER.value, UserRole.MUNICIPAL_OFFICER.value, UserRole.ADMIN.value]))
+    current_user: dict = Depends(require_roles([UserRole.FIELD_OFFICER.value, UserRole.COMMAND_ADMIN.value]))
 ):
     incident = db.query(Incident).filter(Incident.id == req.incident_id).first()
     if not incident:
@@ -124,7 +124,7 @@ def submit_smart_closure_match(
 def verify_and_close(
     req: ClosureVerifyRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_roles([UserRole.MUNICIPAL_OFFICER.value, UserRole.ADMIN.value]))
+    current_user: dict = Depends(require_roles([UserRole.COMMAND_ADMIN.value]))
 ):
     submission = db.query(ClosureSubmission).filter(ClosureSubmission.id == req.closure_submission_id).first()
     if not submission:
