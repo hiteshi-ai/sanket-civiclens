@@ -40,7 +40,7 @@ export const CitizenView: React.FC = () => {
   };
 
   const handleConfirmSubmit = () => {
-    const ticketId = `CHD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const ticketId = `CHD-2026-${Date.now().toString().slice(-4)}`;
     setSubmittedTicket(ticketId);
 
     submitCitizenReport({

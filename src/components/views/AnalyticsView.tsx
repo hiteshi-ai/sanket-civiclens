@@ -23,6 +23,21 @@ export const AnalyticsView: React.FC = () => {
   const recurring = incidents.filter((i) => i.isRecurring).length;
   const resolved = incidents.filter((i) => i.status === 'resolved').length;
 
+  const domainData = React.useMemo(() => {
+    const catTotals: Record<string, number> = {};
+    for (const inc of incidents) {
+      catTotals[inc.category] = (catTotals[inc.category] || 0) + 1;
+    }
+    const totalInc = incidents.length || 1;
+    return [
+      { id: 'pothole', categoryKey: 'pothole', name: 'Pothole & Surface Damage', count: catTotals['pothole'] || 0, pct: Math.round(((catTotals['pothole'] || 0) / totalInc) * 100), color: 'bg-[#C54E38]', barHex: '#C54E38' },
+      { id: 'drainage', categoryKey: 'drainage', name: 'Drainage & Waterlogging', count: catTotals['drainage'] || 0, pct: Math.round(((catTotals['drainage'] || 0) / totalInc) * 100), color: 'bg-[#24638F]', barHex: '#24638F' },
+      { id: 'waste', categoryKey: 'waste', name: 'Waste & Secondary Dumps', count: catTotals['waste'] || 0, pct: Math.round(((catTotals['waste'] || 0) / totalInc) * 100), color: 'bg-[#C88427]', barHex: '#C88427' },
+      { id: 'streetlight', categoryKey: 'streetlight', name: 'Streetlighting & Electrical', count: catTotals['streetlight'] || 0, pct: Math.round(((catTotals['streetlight'] || 0) / totalInc) * 100), color: 'bg-[#8F6624]', barHex: '#8F6624' },
+      { id: 'other', categoryKey: 'other', name: 'Other Civic Hazards', count: catTotals['other'] || 0, pct: Math.round(((catTotals['other'] || 0) / totalInc) * 100), color: 'bg-[#565C68]', barHex: '#565C68' },
+    ];
+  }, [incidents]);
+
   return (
     <div className="space-y-6 text-left animate-fade-in">
       {/* Header */}
@@ -148,7 +163,7 @@ export const AnalyticsView: React.FC = () => {
       {/* Category Breakdown & Spatial Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Issue Category Distribution (Upgraded Animated SANKET Intelligence Component) */}
-        <IssueVolumeByDomain />
+        <IssueVolumeByDomain data={domainData} totalSampleLabel={`${total} Verified Incidents`} />
 
 
         {/* Operational Flow & Trust Attribution */}

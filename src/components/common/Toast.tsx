@@ -23,7 +23,7 @@ export const Toast: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 max-w-md animate-bounce-short">
+    <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 left-3 z-50 max-w-md sm:bottom-6 sm:right-6 sm:left-auto animate-bounce-short">
       <div className={`p-4 rounded-xl shadow-xl border ${border} ${bg} flex items-start gap-3 text-left`}>
         <div className="mt-0.5 shrink-0">{icon}</div>
         <div className="flex-1 min-w-0">

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CivicProvider, useCivic } from './context/CivicContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/common/Header';
 import { Sidebar } from './components/common/Sidebar';
 import { Toast } from './components/common/Toast';
@@ -24,12 +25,15 @@ import {
   ListOrdered,
   MapPin,
   History,
-  BarChart3,
-  FileText
 } from 'lucide-react';
-import { MunicipalTab } from './types/civic';
+import { MunicipalTab, Persona } from './types/civic';
+import { RoleSelectionPage } from './components/entry/RoleSelectionPage';
+import { CitizenWorkspace } from './components/citizen/CitizenWorkspace';
+import { FieldWorkspace } from './components/field/FieldWorkspace';
 
-const MainShell: React.FC = () => {
+export type FieldRouteName = 'home' | 'jobs' | 'map' | 'history' | 'profile';
+
+const MainShell: React.FC<{ onLogout?: () => void }> = () => {
   const { persona, activeTab, setActiveTab } = useCivic();
 
   const mobileNavItems: { id: MunicipalTab; label: string; icon: React.ReactNode }[] = [
@@ -41,19 +45,19 @@ const MainShell: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen isolate bg-[#FBFBF9] text-[#191B1F] flex flex-col selection:bg-[#2C5E48]/20 selection:text-[#1E4333]">
+    <div className="h-[100dvh] overflow-hidden isolate bg-[#FBFBF9] text-[#191B1F] flex flex-col selection:bg-[#2C5E48]/20 selection:text-[#1E4333]">
       <Header />
 
       {/* Main Content Router based on Persona */}
       {persona === 'municipal' && (
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden">
           {/* Desktop Left Sidebar */}
           <div className="hidden md:block">
             <Sidebar />
           </div>
 
           {/* Main Scrollable View Area */}
-          <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-8 max-w-7xl mx-auto w-full">
+          <main className="flex-1 min-w-0 overflow-y-auto overscroll-contain px-4 sm:px-6 lg:px-8 py-5 sm:py-6 pb-24 md:pb-8 max-w-7xl mx-auto w-full">
             {activeTab === 'dashboard' && <DashboardView />}
             {activeTab === 'incidents' && <IncidentsView />}
             {activeTab === 'priority_queue' && <PriorityQueueView />}
@@ -66,14 +70,14 @@ const MainShell: React.FC = () => {
           </main>
 
           {/* Mobile Bottom Navigation Bar */}
-          <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-[#E5E3DC] z-30 flex items-center justify-around py-2 px-1 shadow-lg">
+          <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-[#E5E3DC] z-30 flex items-center justify-around px-1 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg">
             {mobileNavItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg text-[10px] font-semibold transition-colors ${
+                  className={`flex flex-1 flex-col items-center gap-1 py-1 px-1 rounded-lg text-[10px] font-semibold transition-colors ${
                     isActive ? 'text-[#2C5E48] font-bold' : 'text-[#7E8592]'
                   }`}
                 >
@@ -87,13 +91,13 @@ const MainShell: React.FC = () => {
       )}
 
       {persona === 'field_officer' && (
-        <main className="flex-1 px-4 py-6 max-w-xl mx-auto w-full">
+        <main className="flex-1 px-4 py-5 sm:py-6 max-w-xl mx-auto w-full">
           <FieldOfficerView />
         </main>
       )}
 
       {persona === 'citizen' && (
-        <main className="flex-1 px-4 py-6 max-w-xl mx-auto w-full">
+        <main className="flex-1 px-4 py-5 sm:py-6 max-w-xl mx-auto w-full">
           <CitizenView />
         </main>
       )}
@@ -108,10 +112,115 @@ const MainShell: React.FC = () => {
   );
 };
 
-export default function App() {
+const RoutedWorkspace: React.FC<{ persona: Persona; onLogout: () => void }> = ({ persona, onLogout }) => {
+  const { setPersona } = useCivic();
+  useEffect(() => {
+    setPersona(persona);
+  }, [persona, setPersona]);
+  return <MainShell onLogout={onLogout} />;
+};
+
+const RoutedCitizenWorkspace: React.FC<{
+  route: 'home' | 'map' | 'report' | 'reports' | 'profile';
+  onNavigate: (path: string) => void;
+}> = ({ route, onNavigate }) => {
+  const { setPersona } = useCivic();
+  useEffect(() => {
+    setPersona('citizen');
+  }, [setPersona]);
+  return <CitizenWorkspace route={route} onNavigate={onNavigate} />;
+};
+
+const RoutedFieldWorkspace: React.FC<{
+  route: FieldRouteName;
+  jobId: string | null;
+  onNavigate: (path: string) => void;
+}> = ({ route, jobId, onNavigate }) => {
+  const { setPersona } = useCivic();
+  useEffect(() => {
+    setPersona('field_officer');
+  }, [setPersona]);
+  return <FieldWorkspace route={route} jobId={jobId} onNavigate={onNavigate} />;
+};
+
+function AppRouter() {
+  const { user, demoLogin, logout } = useAuth();
+  const [pathname, setPathname] = useState(() => window.location.pathname);
+
+  useEffect(() => {
+    const onPopState = () => setPathname(window.location.pathname);
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const navigate = (path: string) => {
+    // If entering a workspace, ensure user has an active authenticated session
+    if (path === '/citizen' && !user) {
+      demoLogin('citizen').catch(() => {});
+    } else if (path === '/field' && !user) {
+      demoLogin('field').catch(() => {});
+    } else if ((path === '/admin' || path === '/command') && !user) {
+      demoLogin('admin').catch(() => {});
+    }
+    window.history.pushState({}, '', path);
+    setPathname(path);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const citizenRoute =
+    pathname === '/citizen'
+      ? 'home'
+      : pathname === '/citizen/map'
+      ? 'map'
+      : pathname === '/citizen/report'
+      ? 'report'
+      : pathname === '/citizen/reports'
+      ? 'reports'
+      : pathname === '/citizen/profile'
+      ? 'profile'
+      : null;
+
+  // Field Worker routing (includes /field/jobs/:id detail routes)
+  const jobMatch = pathname.match(/^\/field\/jobs\/([^/]+)$/);
+  const fieldJobId = jobMatch ? jobMatch[1] : null;
+  const fieldRoute: FieldRouteName | null =
+    pathname === '/field'
+      ? 'home'
+      : pathname === '/field/jobs' || fieldJobId
+      ? 'jobs'
+      : pathname === '/field/map'
+      ? 'map'
+      : pathname === '/field/history'
+      ? 'history'
+      : pathname === '/field/profile'
+      ? 'profile'
+      : null;
+
+  const isAdminRoute = pathname === '/admin' || pathname === '/command' || pathname === '/municipal';
+
   return (
     <CivicProvider>
-      <MainShell />
+      {citizenRoute ? (
+        <RoutedCitizenWorkspace route={citizenRoute} onNavigate={navigate} />
+      ) : fieldRoute ? (
+        <RoutedFieldWorkspace route={fieldRoute} jobId={fieldJobId} onNavigate={navigate} />
+      ) : isAdminRoute ? (
+        <RoutedWorkspace persona="municipal" onLogout={handleLogout} />
+      ) : (
+        <RoleSelectionPage onNavigate={navigate} />
+      )}
     </CivicProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
   );
 }
