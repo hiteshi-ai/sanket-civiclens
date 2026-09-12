@@ -18,29 +18,30 @@ import {
 } from 'lucide-react';
 
 export const FieldOfficerView: React.FC = () => {
-  const {
-    incidents,
-    resolveFieldIncident,
-    showToast,
-    isOffline
-  } = useCivic();
+  const { incidents, resolveFieldIncident, showToast } = useCivic();
 
   // Pick assigned incident or first critical incident
-  const assigned =
-    incidents.find((i) => i.id === 'inc-001') ||
-    incidents.find((i) => i.status === 'assigned') ||
-    incidents[0];
+  const assigned = incidents.find((i) => i.status === 'assigned');
 
   const [step, setStep] = useState<'dispatch' | 'repair_camera' | 'verification_match' | 'completed'>('dispatch');
   const [isNavigating, setIsNavigating] = useState(false);
   const [isOnTheWay, setIsOnTheWay] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
 
+  if (!assigned) {
+    return (
+      <div className="bg-white rounded-2xl border border-[#E5E3DC] shadow-md p-6 text-center space-y-2">
+        <h2 className="text-base font-bold text-[#191B1F]">No field assignment available</h2>
+        <p className="text-xs text-[#7E8592]">Assignments and repair evidence are loaded from the backend. No assigned incident is currently available.</p>
+      </div>
+    );
+  }
+
   const handleStartNav = () => {
     setIsNavigating(true);
     showToast(
       'Turn-by-Turn Navigation Started',
-      `Routing via Madhya Marg to ${assigned.sector}. Distance: 2.8 km (8 mins).`,
+      `Navigation started for ${assigned.sector}.`,
       'info'
     );
   };
@@ -55,26 +56,25 @@ export const FieldOfficerView: React.FC = () => {
   };
 
   const handleSimulateCameraCapture = () => {
-    // Simulate captured repaired photo
-    const repairUrl =
-      'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80';
-    setCapturedPhoto(repairUrl);
+    document.getElementById('field-repair-photo')?.click();
     setStep('verification_match');
   };
 
   const handleConfirmResolution = () => {
+    if (!capturedPhoto) return;
     resolveFieldIncident(
       assigned.id,
-      capturedPhoto || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80',
+      capturedPhoto,
       'resolved'
     );
     setStep('completed');
   };
 
   const handleFlagReview = () => {
+    if (!capturedPhoto) return;
     resolveFieldIncident(
       assigned.id,
-      capturedPhoto || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80',
+      capturedPhoto,
       'needs_review'
     );
     setStep('completed');
@@ -143,7 +143,7 @@ export const FieldOfficerView: React.FC = () => {
                 className="w-full h-full object-cover"
               />
               <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded">
-                Reported by 17 Citizens
+                Backend report evidence
               </div>
             </div>
 
@@ -177,8 +177,21 @@ export const FieldOfficerView: React.FC = () => {
                   }`}
                 >
                   <Navigation className="w-3.5 h-3.5 text-[#2C5E48]" />
-                  <span>{isNavigating ? 'Navigating (2.8 km)' : 'Start Navigation'}</span>
+                  <span>{isNavigating ? 'Navigating' : 'Start Navigation'}</span>
                 </button>
+                <input
+                  id="field-repair-photo"
+                  className="hidden"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    setCapturedPhoto(URL.createObjectURL(file));
+                    setStep('verification_match');
+                  }}
+                />
 
                 <button
                   onClick={handleMarkOnTheWay}
@@ -233,7 +246,7 @@ export const FieldOfficerView: React.FC = () => {
               Align Repair with Road Markings
             </span>
             <span className="text-[10px] text-white/70 font-mono mt-0.5">
-              30.7415° N, 76.7794° E • Sector 17
+              Backend incident coordinates • {assigned.sector}
             </span>
           </div>
 
@@ -278,14 +291,14 @@ export const FieldOfficerView: React.FC = () => {
               </span>
               <div className="flex items-baseline gap-1 mt-0.5">
                 <span className="text-3xl font-black font-mono text-[#1E6B42]">
-                  96%
+                  {assigned.confidenceScore != null ? `${assigned.confidenceScore}%` : 'Unavailable'}
                 </span>
                 <span className="text-xs font-bold text-[#1E6B42]">Likely Match</span>
               </div>
             </div>
             <div className="text-right text-xs text-[#1E6B42]">
-              <span className="font-bold block">8 metres away</span>
-              <span className="text-[10px] text-[#1E6B42]/80">GPS Centroid Match</span>
+              <span className="font-bold block">Backend evidence required</span>
+              <span className="text-[10px] text-[#1E6B42]/80">No closure result loaded</span>
             </div>
           </div>
 
@@ -306,16 +319,12 @@ export const FieldOfficerView: React.FC = () => {
               <div className="px-2 py-1 bg-[#EBF7EF] border-b border-[#C8EAD4] text-[10px] font-bold text-[#1E6B42]">
                 AFTER (Officer Sen)
               </div>
-              <img
-                src={capturedPhoto || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80'}
-                alt="After repair"
-                className="w-full h-28 object-cover"
-              />
+              {capturedPhoto ? <img src={capturedPhoto} alt="After repair" className="w-full h-28 object-cover" /> : <div className="h-28 flex items-center justify-center text-[10px] text-[#7E8592]">After photo unavailable</div>}
             </div>
           </div>
 
           <p className="text-xs text-[#565C68] leading-relaxed italic bg-[#FAF9F5] p-3 rounded-lg border border-[#E5E3DC]">
-            "Location and visual evidence suggest this is the reported incident. Kerb alignment, asphalt aggregate texture, and road camber match with 94% visual confidence."
+            "Closure confidence is unavailable until the backend receives and evaluates after-repair evidence."
           </p>
 
           {/* Operational Resolution Decisions */}
@@ -350,7 +359,7 @@ export const FieldOfficerView: React.FC = () => {
               Ticket #{assigned.ticketNumber} Updated
             </h3>
             <p className="text-xs text-[#565C68] mt-1 max-w-xs mx-auto">
-              Smart Closure Match recorded with 96% confidence. Civic Memory timeline updated for Sector 17.
+              Repair evidence was submitted for backend verification. A closure score is unavailable until verification completes.
             </p>
           </div>
 

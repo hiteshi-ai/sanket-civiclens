@@ -272,20 +272,20 @@ export const MethodologyView: React.FC = () => {
           <div className="p-3.5 rounded-xl bg-[#FAF9F5] border border-[#E5E3DC] space-y-2 text-xs">
             <div className="flex items-center justify-between pb-1 border-b border-[#E5E3DC]">
               <span className="font-bold text-[#191B1F]">Illustrative Prototype Example</span>
-              <span className="font-mono font-black text-sm text-[#1E6B42]">Overall: 92% Confidence</span>
+              <span className="font-mono font-black text-sm text-[#1E6B42]">Live score: unavailable</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
               <div className="bg-white p-2 rounded border border-[#E5E3DC]">
                 <span className="text-[#7E8592] block text-[10px]">Independent Reports</span>
-                <span className="font-bold text-[#191B1F]">17 signals</span>
+                <span className="font-bold text-[#191B1F]">Backend data required</span>
               </div>
               <div className="bg-white p-2 rounded border border-[#E5E3DC]">
                 <span className="text-[#7E8592] block text-[10px]">Location Agreement</span>
-                <span className="font-bold text-[#191B1F]">4.2m Radius</span>
+                <span className="font-bold text-[#191B1F]">Backend data required</span>
               </div>
               <div className="bg-white p-2 rounded border border-[#E5E3DC]">
                 <span className="text-[#7E8592] block text-[10px]">Visual Similarity</span>
-                <span className="font-bold text-[#191B1F]">91% Match</span>
+                <span className="font-bold text-[#191B1F]">Unavailable</span>
               </div>
               <div className="bg-white p-2 rounded border border-[#E5E3DC]">
                 <span className="text-[#7E8592] block text-[10px]">Temporal Cluster</span>
@@ -325,8 +325,8 @@ export const MethodologyView: React.FC = () => {
               <span className="text-[11px] text-[#565C68]">34,000 transit vehicles daily • 32 days waiting</span>
             </div>
             <div className="text-right">
-              <span className="font-mono font-black text-xl text-[#C54E38]">87 / 100</span>
-              <span className="block text-[10px] text-[#7E8592]">Illustrative prototype score</span>
+              <span className="font-mono font-black text-xl text-[#C54E38]">Unavailable</span>
+              <span className="block text-[10px] text-[#7E8592]">Select a backend incident to view its score</span>
             </div>
           </div>
 
@@ -475,11 +475,11 @@ export const MethodologyView: React.FC = () => {
 
           <div className="p-3.5 rounded-xl bg-[#FAF9F5] border border-[#E5E3DC] flex items-center justify-between text-xs">
             <div>
-              <span className="font-bold text-[#191B1F]">Closure Verification Match: 96%</span>
-              <span className="text-[11px] text-[#565C68] block mt-0.5">8 metres from reported coordinate • High visual alignment</span>
+              <span className="font-bold text-[#191B1F]">Closure Verification Match: unavailable</span>
+              <span className="text-[11px] text-[#565C68] block mt-0.5">Distance and visual alignment require verified backend evidence.</span>
             </div>
             <div className="flex items-center gap-2 text-[10px] font-bold">
-              <span className="px-2 py-1 rounded bg-[#EBF7EF] text-[#1E6B42] border border-[#C8EAD4]">Eligible for Closure</span>
+              <span className="px-2 py-1 rounded bg-[#F4F3EF] text-[#7E8592] border border-[#E5E3DC]">Awaiting Evidence</span>
             </div>
           </div>
         </div>

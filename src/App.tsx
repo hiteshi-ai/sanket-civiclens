@@ -14,6 +14,7 @@ import { SettingsView } from './components/views/SettingsView';
 import { MethodologyView } from './components/views/MethodologyView';
 import { FieldOfficerView } from './components/views/FieldOfficerView';
 import { CitizenView } from './components/views/CitizenView';
+import { MunicipalDashboardPage } from './pages/MunicipalDashboardPage';
 import { IncidentDetailDrawer } from './components/views/IncidentDetailDrawer';
 import { ScoreExplanationModal } from './components/intelligence/ScoreExplanationModal';
 import { EvidenceDrawer } from './components/intelligence/EvidenceDrawer';
@@ -54,7 +55,7 @@ const MainShell: React.FC = () => {
 
           {/* Main Scrollable View Area */}
           <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-8 max-w-7xl mx-auto w-full">
-            {activeTab === 'dashboard' && <DashboardView />}
+            {activeTab === 'dashboard' && <MunicipalDashboardPage />}
             {activeTab === 'incidents' && <IncidentsView />}
             {activeTab === 'priority_queue' && <PriorityQueueView />}
             {activeTab === 'map_view' && <MapView />}

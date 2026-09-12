@@ -21,6 +21,9 @@ export const ReportsView: React.FC = () => {
   const [selectedReportType, setSelectedReportType] = useState<string>('incident_summary');
   const [selectedDept, setSelectedDept] = useState<string>('all');
   const [dateRange, setDateRange] = useState<string>('last_30_days');
+  const totalReports = incidents.length;
+  const waitingReports = incidents.filter((incident) => incident.waitingDays >= 30).length;
+  const recurringSites = incidents.filter((incident) => incident.isRecurring).length;
 
   const handleExport = (format: 'pdf' | 'csv' | 'brief') => {
     showToast(
@@ -34,30 +37,30 @@ export const ReportsView: React.FC = () => {
     {
       id: 'incident_summary',
       title: 'Citywide Incident Intake & Triage Summary',
-      description: 'Comprehensive audit of all 30 active civic reports, categorized by severity, risk score, and geographic sector.',
+      description: 'Backend-backed audit of civic reports, categorized by severity, risk score, and geographic sector.',
       icon: <FileText className="w-5 h-5 text-[#2C5E48]" />,
-      stats: '30 records compiled'
+      stats: `${totalReports} records loaded`
     },
     {
       id: 'priority_aging',
       title: 'Priority Aging & SLA Breach Audit',
-      description: 'Detailed analysis of incidents exceeding the 21-day municipal hazard tolerance, with automatic risk escalation logs.',
+      description: 'Detailed analysis of incidents exceeding the configured waiting threshold, using backend timestamps and score records.',
       icon: <Clock className="w-5 h-5 text-[#C54E38]" />,
-      stats: '8 critical breaches'
+      stats: `${waitingReports} records over 30 days`
     },
     {
       id: 'civic_memory',
       title: 'Civic Memory: Recurring Infrastructure Hotspots',
       description: 'Structural failure register identifying repeat infrastructure defects and root-cause engineering recommendations.',
       icon: <History className="w-5 h-5 text-[#C88427]" />,
-      stats: '14 recurring sites'
+      stats: `${recurringSites} recurring sites`
     },
     {
       id: 'smart_closure',
       title: 'Field Verification & Smart Closure Compliance',
       description: 'Post-repair photographic evidence, GPS distance validation, and computer vision match confidence records.',
       icon: <FileCheck className="w-5 h-5 text-[#1E6B42]" />,
-      stats: '96% avg match rate'
+      stats: 'Match rate unavailable'
     }
   ];
 

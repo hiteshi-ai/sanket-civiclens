@@ -22,6 +22,9 @@ export const AnalyticsView: React.FC = () => {
   const highRisk = incidents.filter((i) => i.riskScore >= 70).length;
   const recurring = incidents.filter((i) => i.isRecurring).length;
   const resolved = incidents.filter((i) => i.status === 'resolved').length;
+  const waitingTooLong = incidents.filter((i) => i.waitingDays >= 30).length;
+  const highRiskResolved = incidents.filter((i) => i.riskScore >= 70 && i.status === 'resolved').length;
+  const highRiskResolutionRate = highRisk > 0 ? Math.round((highRiskResolved / highRisk) * 100) : null;
 
   return (
     <div className="space-y-6 text-left animate-fade-in">
@@ -36,7 +39,7 @@ export const AnalyticsView: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <DemoBadge label="DEMO TELEMETRY" />
+          <DemoBadge label="BACKEND TELEMETRY" />
         </div>
       </div>
 
@@ -51,10 +54,10 @@ export const AnalyticsView: React.FC = () => {
               Emerging Pattern
             </span>
             <p className="text-xs font-bold text-[#191B1F] mt-0.5">
-              Sector 22 drainage overflows increased by 38%
+              {recurring > 0 ? `${recurring} recurring locations identified` : 'No recurring pattern available'}
             </p>
             <p className="text-[11px] text-[#565C68] mt-1 leading-snug">
-              Correlated with unvented restaurant grease traps choking the 600mm internal market sewer line.
+              {recurring > 0 ? 'Recurring status is derived from backend incident evidence.' : 'Historical recurrence data is unavailable.'}
             </p>
           </div>
         </div>
@@ -68,10 +71,10 @@ export const AnalyticsView: React.FC = () => {
               Aging SLA Notice
             </span>
             <p className="text-xs font-bold text-[#191B1F] mt-0.5">
-              8 arterial issues exceeded 30-day resolution threshold
+              {waitingTooLong > 0 ? `${waitingTooLong} issues exceeded the 30-day waiting threshold` : 'No issues exceeded the 30-day waiting threshold'}
             </p>
             <p className="text-[11px] text-[#565C68] mt-1 leading-snug">
-              SANKET Priority Aging has raised risk scores by an average of +22 points across these coordinates.
+              Waiting-time figures are calculated from incident timestamps returned by the backend.
             </p>
           </div>
         </div>
@@ -85,10 +88,10 @@ export const AnalyticsView: React.FC = () => {
               Closure Quality Index
             </span>
             <p className="text-xs font-bold text-[#191B1F] mt-0.5">
-              96% Smart Closure match rate achieved
+              Closure match rate unavailable
             </p>
             <p className="text-[11px] text-[#565C68] mt-1 leading-snug">
-              Spatial GPS validation and photographic computer vision prevent premature fraudulent ticket closures.
+              No verified closure-match evidence is currently available from the backend.
             </p>
           </div>
         </div>
@@ -101,10 +104,10 @@ export const AnalyticsView: React.FC = () => {
             Avg. Turnaround Time
           </span>
           <div className="text-2xl font-black font-mono text-[#191B1F] mt-1">
-            14.2 <span className="text-xs font-medium text-[#7E8592]">Days</span>
+            — <span className="text-xs font-medium text-[#7E8592]">Unavailable</span>
           </div>
           <span className="text-[11px] text-[#1E6B42] font-medium flex items-center gap-0.5 mt-1">
-            -2.4 days vs previous quarter
+            No historical comparison available
           </span>
         </div>
 
@@ -113,10 +116,10 @@ export const AnalyticsView: React.FC = () => {
             Citizen Signal Intake
           </span>
           <div className="text-2xl font-black font-mono text-[#191B1F] mt-1">
-            418 <span className="text-xs font-medium text-[#7E8592]">Monthly</span>
+            {total} <span className="text-xs font-medium text-[#7E8592]">Loaded</span>
           </div>
           <span className="text-[11px] text-[#2C5E48] font-medium flex items-center gap-0.5 mt-1">
-            92% verified via multi-source fusion
+            {total > 0 ? `${Math.round((incidents.filter((i) => i.confidenceScore >= 50).length / total) * 100)}% at or above confidence threshold` : 'Confidence unavailable'}
           </span>
         </div>
 
@@ -128,7 +131,7 @@ export const AnalyticsView: React.FC = () => {
             {recurring} <span className="text-xs font-medium text-[#7E8592]">Hotspots</span>
           </div>
           <span className="text-[11px] text-[#565C68] font-medium block mt-1">
-            46% of annual asphalt budget spent
+            Backend recurrence records only; budget data unavailable
           </span>
         </div>
 
@@ -137,10 +140,10 @@ export const AnalyticsView: React.FC = () => {
             High-Risk Resolution Rate
           </span>
           <div className="text-2xl font-black font-mono text-[#2C5E48] mt-1">
-            81.4%
+            {highRiskResolutionRate == null ? '—' : `${highRiskResolutionRate}%`}
           </div>
           <span className="text-[11px] text-[#1E6B42] font-medium block mt-1">
-            Critical priority SLA compliance
+            {highRiskResolutionRate == null ? 'No high-risk resolution data' : 'Backend-derived resolved share'}
           </span>
         </div>
       </div>
@@ -167,7 +170,7 @@ export const AnalyticsView: React.FC = () => {
             </div>
             <div className="p-3 rounded-lg bg-[#FAF9F5] border border-[#E5E3DC] flex items-center justify-between">
               <span className="font-semibold text-[#191B1F]">2. Civic Confidence Synthesis</span>
-              <span className="text-[#2C5E48] font-bold font-mono">Cluster &gt;85%</span>
+              <span className="text-[#2C5E48] font-bold font-mono">Backend-derived</span>
             </div>
             <div className="p-3 rounded-lg bg-[#FAF9F5] border border-[#E5E3DC] flex items-center justify-between">
               <span className="font-semibold text-[#191B1F]">3. Priority Aging Triage</span>
@@ -179,7 +182,7 @@ export const AnalyticsView: React.FC = () => {
             </div>
             <div className="p-3 rounded-lg bg-[#FAF9F5] border border-[#E5E3DC] flex items-center justify-between">
               <span className="font-semibold text-[#191B1F]">5. Smart Closure & Memory Log</span>
-              <span className="text-[#1E6B42] font-bold font-mono">96% Visual Verification</span>
+              <span className="text-[#1E6B42] font-bold font-mono">Verification unavailable</span>
             </div>
           </div>
         </div>

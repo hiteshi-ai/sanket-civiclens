@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useCivic } from '../../context/CivicContext';
-import { DemoBadge } from '../common/Badges';
 import {
   X,
   CheckCircle2,
@@ -26,27 +25,23 @@ export const SmartClosureModal: React.FC = () => {
   if (!isSmartClosureOpen || !selectedIncident) return null;
 
   const inc = selectedIncident;
-  const closure = inc.smartClosure || {
-    matchConfidence: 96,
-    distanceMeters: 8,
-    isLikelyMatch: true,
-    visualMatchScore: 94,
-    explanation: 'Location coordinates match within 8 metres. Structural perimeter landmarks and curbing geometry align with 94% visual confidence.'
-  };
+  const closure = inc.smartClosure;
 
   const handleConfirmResolve = () => {
+    if (!inc.afterImageUrl || !closure) return;
     resolveFieldIncident(
       inc.id,
-      inc.afterImageUrl || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80',
+      inc.afterImageUrl,
       'resolved'
     );
     setIsSmartClosureOpen(false);
   };
 
   const handleFlagReview = () => {
+    if (!inc.afterImageUrl || !closure) return;
     resolveFieldIncident(
       inc.id,
-      inc.afterImageUrl || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80',
+      inc.afterImageUrl,
       'needs_review'
     );
     setIsSmartClosureOpen(false);
@@ -84,19 +79,19 @@ export const SmartClosureModal: React.FC = () => {
           <div className="p-4 rounded-xl bg-[#EBF7EF] border border-[#C8EAD4] flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-white border border-[#C8EAD4] flex items-center justify-center text-[#1E6B42] font-black font-mono text-xl shadow-xs">
-                {closure.matchConfidence}%
+                {closure ? `${closure.matchConfidence}%` : 'Unavailable'}
               </div>
               <div>
                 <span className="text-xs font-bold text-[#1E6B42] uppercase tracking-wider block">
-                  Likely Verified Match
+                  {closure ? 'Backend verification result' : 'Verification unavailable'}
                 </span>
                 <p className="text-xs text-[#1E6B42]/90 font-medium mt-0.5">
-                  Location within <span className="font-bold underline">{closure.distanceMeters} metres</span> of original reported coordinate.
+                  {closure ? <>Location within <span className="font-bold underline">{closure.distanceMeters} metres</span> of original reported coordinate.</> : 'No verified closure evidence is available for this incident.'}
                 </p>
               </div>
             </div>
             <span className="hidden sm:inline-block px-2.5 py-1 rounded text-xs font-bold bg-white text-[#1E6B42] border border-[#C8EAD4]">
-              High Verification
+              {closure ? 'Evidence available' : 'No evidence'}
             </span>
           </div>
 
@@ -107,7 +102,7 @@ export const SmartClosureModal: React.FC = () => {
                 Visual Evidence Comparison
               </span>
               <span className="text-[11px] text-[#7E8592] font-mono">
-                Visual Alignment: {closure.visualMatchScore}%
+                Visual Alignment: {closure ? `${closure.visualMatchScore}%` : 'Unavailable'}
               </span>
             </div>
 
@@ -134,13 +129,13 @@ export const SmartClosureModal: React.FC = () => {
                   <span className="font-bold text-[#1E6B42]">AFTER REPAIR PHOTO</span>
                   <span className="text-[10px] text-[#1E6B42] font-mono">Field Officer Upload</span>
                 </div>
-                <img
-                  src={inc.afterImageUrl || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80'}
-                  alt="Repaired condition"
-                  className="w-full h-48 object-cover"
-                />
+                {inc.afterImageUrl ? (
+                  <img src={inc.afterImageUrl} alt="Repaired condition" className="w-full h-48 object-cover" />
+                ) : (
+                  <div className="h-48 flex items-center justify-center text-xs text-[#7E8592]">After-repair photo unavailable.</div>
+                )}
                 <div className="p-2.5 text-[11px] text-[#1E6B42] leading-tight">
-                  Fresh hot-mix asphalt compaction matching street kerb alignment.
+                  {closure?.explanation ?? 'Verified repair description unavailable.'}
                 </div>
               </div>
             </div>
@@ -153,23 +148,25 @@ export const SmartClosureModal: React.FC = () => {
               <span>SANKET Verification Logic</span>
             </div>
             <p className="text-xs text-[#565C68] leading-relaxed">
-              "{closure.explanation}"
+              "{closure?.explanation ?? 'No backend verification explanation is available.'}"
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
         <div className="p-5 border-t border-[#E5E3DC] bg-[#FAF9F5] flex flex-col sm:flex-row items-center justify-between gap-3">
-          <DemoBadge label="CLOSURE VERIFICATION PROTOTYPE" />
+          <span className="text-[11px] text-[#7E8592]">Closure verification requires backend evidence.</span>
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <button
               onClick={handleFlagReview}
+              disabled={!closure || !inc.afterImageUrl}
               className="flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-bold bg-[#FDF0ED] text-[#C54E38] border border-[#F8D2CA] hover:bg-[#FCE3DD] transition-colors"
             >
               Needs Secondary Review
             </button>
             <button
               onClick={handleConfirmResolve}
+              disabled={!closure || !inc.afterImageUrl}
               className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold bg-[#1E6B42] text-white hover:bg-[#185333] transition-colors flex items-center justify-center gap-1.5 shadow-sm"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />

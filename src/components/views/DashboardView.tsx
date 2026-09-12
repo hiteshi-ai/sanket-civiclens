@@ -62,7 +62,7 @@ export const DashboardView: React.FC = () => {
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <DemoBadge label="MUNICIPAL COMMAND FEED" />
           <span className="text-xs font-mono text-[#7E8592]">
-            Sep 9, 2026 • 22:35
+            {new Date().toLocaleString()}
           </span>
         </div>
       </div>
@@ -185,7 +185,7 @@ export const DashboardView: React.FC = () => {
             <span className="text-xs text-[#7E8592] font-semibold">Corroboration</span>
           </div>
           <p className="text-xs text-[#565C68] font-medium mt-1">
-            Across 30 active civic signals
+            {incidents.length === 0 ? 'No backend incidents loaded' : `${incidents.length} backend incidents loaded`}
           </p>
           <div className="mt-3 pt-2 border-t border-[#F4F3EF] flex items-center justify-between text-[11px] text-[#7E8592]">
             <span>View Signal Telemetry</span>

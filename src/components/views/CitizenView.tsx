@@ -1,97 +1,147 @@
-import React, { useState } from 'react';
-import { useCivic } from '../../context/CivicContext';
-import { DemoBadge, CategoryBadge, StatusBadge } from '../common/Badges';
+import React, { useEffect, useState } from 'react';
+import { getIncidents, submitReport } from '../../api';
+import type { Incident } from '../../types';
+import { CategoryBadge, StatusBadge } from '../common/Badges';
 import {
   Camera,
   MapPin,
   Sparkles,
   CheckCircle2,
-  AlertTriangle,
-  RotateCcw,
   WifiOff,
   Send,
   Eye,
-  ChevronRight,
-  ShieldCheck,
-  ArrowRight
+  ShieldCheck
 } from 'lucide-react';
-import { IssueCategory } from '../../types/civic';
+
+type Category =
+  | 'POTHOLE_ROAD_DAMAGE'
+  | 'GARBAGE_OVERFLOW'
+  | 'BROKEN_STREETLIGHT'
+  | 'DRAINAGE_WATERLOGGING'
+  | 'OTHER';
+
+type Location = {
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+};
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('The photo could not be read.'));
+    reader.readAsDataURL(file);
+  });
+}
 
 export const CitizenView: React.FC = () => {
-  const {
-    incidents,
-    submitCitizenReport,
-    isOffline,
-    offlineQueue,
-    syncOfflineQueue,
-    isSyncing
-  } = useCivic();
-
   const [mode, setMode] = useState<'home' | 'camera' | 'ai_understand' | 'submitted' | 'recent'>('home');
-  const [photoUrl, setPhotoUrl] = useState<string>('https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80');
-  const [detectedCategory, setDetectedCategory] = useState<IssueCategory>('pothole');
-  const [detectedLocation, setDetectedLocation] = useState('Sector 17, Chandigarh');
-  const [detectedDescription, setDetectedDescription] = useState('Large pothole cluster causing vehicle swerving and water stagnation near bus lane.');
-  const [submittedTicket, setSubmittedTicket] = useState<string>('');
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [category, setCategory] = useState<Category>('POTHOLE_ROAD_DAMAGE');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState<Location | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [submittedReportId, setSubmittedReportId] = useState<string | null>(null);
+  const [submittedIncidentId, setSubmittedIncidentId] = useState<string | null>(null);
+  const [recentIncidents, setRecentIncidents] = useState<Incident[]>([]);
+  const [recentLoading, setRecentLoading] = useState(false);
 
-  const handleCapturePhoto = () => {
-    // Simulate camera capture
-    setMode('ai_understand');
+  useEffect(() => {
+    if (!photo) {
+      setPhotoUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(photo);
+    setPhotoUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
+
+  const captureLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Location unavailable — this browser does not support GPS.');
+      return;
+    }
+    setLocationLoading(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          accuracy: Number.isFinite(coords.accuracy) ? coords.accuracy : null
+        });
+        setLocationLoading(false);
+      },
+      () => {
+        setLocationError('Location unavailable — please enable location or retry.');
+        setLocationLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
   };
 
-  const handleConfirmSubmit = () => {
-    const ticketId = `CHD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    setSubmittedTicket(ticketId);
+  const handleConfirmSubmit = async () => {
+    if (!photo || !location) {
+      setSubmissionError('Add a photo and capture your GPS location before submitting.');
+      return;
+    }
+    setSubmitting(true);
+    setSubmissionError(null);
+    try {
+      const response = await submitReport({
+        idempotency_key: crypto.randomUUID(),
+        category,
+        photo_base64: await fileToDataUrl(photo),
+        latitude: location.latitude,
+        longitude: location.longitude,
+        accuracy_meters: location.accuracy ?? undefined,
+        location_source: 'GPS',
+        description: description.trim() || undefined,
+        client_timestamp: new Date().toISOString()
+      });
+      setSubmittedReportId(response.report_id);
+      setSubmittedIncidentId(response.incident_id ?? null);
+      setMode('submitted');
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : 'The report could not be submitted.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    submitCitizenReport({
-      category: detectedCategory,
-      description: detectedDescription,
-      sector: 'Sector 17',
-      location: detectedLocation,
-      imageDataUrl: photoUrl
-    });
-
-    setMode('submitted');
+  const loadRecent = async () => {
+    setRecentLoading(true);
+    try {
+      setRecentIncidents(await getIncidents());
+      setMode('recent');
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : 'Recent incidents are unavailable.');
+    } finally {
+      setRecentLoading(false);
+    }
   };
 
   const handleReset = () => {
     setMode('home');
+    setPhoto(null);
+    setLocation(null);
+    setDescription('');
+    setCategory('POTHOLE_ROAD_DAMAGE');
+    setSubmissionError(null);
+    setSubmittedReportId(null);
+    setSubmittedIncidentId(null);
   };
 
   return (
     <div className="max-w-md mx-auto space-y-4 text-left animate-fade-in pb-12">
-      {/* Offline Status Notice Banner */}
-      {isOffline && (
-        <div className="p-3.5 rounded-xl bg-[#FDF0ED] border border-[#F8D2CA] text-[#C54E38] flex items-center justify-between text-xs animate-pulse">
-          <div className="flex items-center gap-2">
-            <WifiOff className="w-4 h-4 shrink-0" />
-            <div>
-              <span className="font-bold block">Offline Mode Active</span>
-              <span className="text-[11px] text-[#C54E38]/90">
-                Reports will be cached locally on your device and auto-synced.
-              </span>
-            </div>
-          </div>
-          <span className="text-[10px] font-mono font-bold bg-white px-2 py-0.5 rounded border border-[#F8D2CA]">
-            SAVED OFFLINE
-          </span>
-        </div>
-      )}
-
-      {/* Offline Queue Sync Reminder */}
-      {offlineQueue.length > 0 && !isOffline && (
-        <div className="p-3.5 rounded-xl bg-[#EBF3EE] border border-[#C5DDD0] text-[#2C5E48] flex items-center justify-between text-xs">
-          <div>
-            <span className="font-bold block">{offlineQueue.length} reports ready to sync</span>
-            <span className="text-[11px]">Connection restored. Push local signals to SANKET.</span>
-          </div>
-          <button
-            onClick={syncOfflineQueue}
-            disabled={isSyncing}
-            className="px-3 py-1.5 rounded-lg bg-[#2C5E48] text-white font-bold text-xs hover:bg-[#1E4333] transition-colors"
-          >
-            {isSyncing ? 'Syncing...' : 'Sync Now'}
-          </button>
+      {submissionError && (
+        <div className="p-3.5 rounded-xl bg-[#FDF0ED] border border-[#F8D2CA] text-[#C54E38] text-xs">
+          {submissionError}
         </div>
       )}
 
@@ -115,7 +165,10 @@ export const CitizenView: React.FC = () => {
 
             <div className="pt-2 space-y-2.5">
               <button
-                onClick={() => setMode('camera')}
+                onClick={() => {
+                  setSubmissionError(null);
+                  setMode('camera');
+                }}
                 className="w-full py-3.5 px-4 rounded-xl bg-[#2C5E48] hover:bg-[#1E4333] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 group cursor-pointer"
               >
                 <Camera className="w-4 h-4 text-emerald-300 group-hover:scale-110 transition-transform" />
@@ -123,11 +176,12 @@ export const CitizenView: React.FC = () => {
               </button>
 
               <button
-                onClick={() => setMode('recent')}
+                onClick={() => void loadRecent()}
+                disabled={recentLoading}
                 className="w-full py-2.5 px-4 rounded-xl bg-[#F4F3EF] hover:bg-[#ECEAE3] text-[#191B1F] font-bold text-xs border border-[#E5E3DC] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Eye className="w-3.5 h-3.5 text-[#565C68]" />
-                <span>See Recent Neighborhood Issues</span>
+                <span>{recentLoading ? 'Loading incidents…' : 'See Recent Neighborhood Issues'}</span>
               </button>
             </div>
           </div>
@@ -158,7 +212,7 @@ export const CitizenView: React.FC = () => {
               Step 1: Capture Defect
             </span>
             <span className="text-[11px] font-mono text-[#2C5E48] font-bold flex items-center gap-1">
-              <MapPin className="w-3 h-3" /> GPS Detected
+              <MapPin className="w-3 h-3" /> {location ? 'GPS captured' : 'GPS required'}
             </span>
           </div>
 
@@ -171,27 +225,51 @@ export const CitizenView: React.FC = () => {
               <div className="w-6 h-6 border-b-2 border-r-2 border-emerald-400 absolute bottom-2 right-2"></div>
             </div>
 
-            <img
-              src={photoUrl}
-              alt="Live Viewfinder"
-              className="w-full h-full object-cover opacity-85"
-            />
+            {photoUrl ? <img src={photoUrl} alt="Selected civic issue" className="w-full h-full object-cover opacity-85" /> : (
+              <label htmlFor="citizen-photo" className="flex flex-col items-center gap-2 text-xs text-white/80 cursor-pointer">
+                <Camera className="w-8 h-8" />
+                Choose or take a photo
+              </label>
+            )}
 
             <div className="absolute bottom-3 inset-x-3 bg-black/60 backdrop-blur-xs text-white p-2 rounded-xl text-center text-xs">
               <span className="font-bold block">Point camera directly at the hazard</span>
               <span className="text-[10px] text-white/70 font-mono">
-                Auto-GPS: Sector 17, Chandigarh (Accuracy: ±2.5m)
+                {location ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}${location.accuracy != null ? ` (±${location.accuracy.toFixed(1)}m)` : ''}` : 'Capture GPS before submitting'}
               </span>
             </div>
           </div>
 
           <div className="space-y-2 pt-2">
             <button
-              onClick={handleCapturePhoto}
+              onClick={() => {
+                if (photo) {
+                  setMode('ai_understand');
+                } else {
+                  document.getElementById('citizen-photo')?.click();
+                }
+              }}
               className="w-full py-3.5 rounded-xl bg-[#2C5E48] hover:bg-[#1E4333] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
             >
               <Camera className="w-4 h-4 text-emerald-300" />
-              <span>Capture & Understand with AI</span>
+              <span>{photo ? 'Use selected photo' : 'Choose or take a photo'}</span>
+            </button>
+
+            <input
+              id="citizen-photo"
+              className="hidden"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(event) => setPhoto(event.target.files?.[0] ?? null)}
+            />
+            <button
+              onClick={captureLocation}
+              disabled={locationLoading}
+              className="w-full py-3 rounded-xl border border-[#C5DDD0] text-[#2C5E48] font-bold text-xs flex items-center justify-center gap-2"
+            >
+              <MapPin className="w-4 h-4" />
+              {locationLoading ? 'Getting location…' : location ? 'Refresh GPS' : 'Get my location'}
             </button>
 
             <button
@@ -204,47 +282,53 @@ export const CitizenView: React.FC = () => {
         </div>
       )}
 
-      {/* MODE 3: AI UNDERSTAND & CONFIRM */}
+      {/* MODE 3: CONFIRM & SUBMIT */}
       {mode === 'ai_understand' && (
         <div className="bg-white rounded-2xl border border-[#E5E3DC] shadow-md p-5 space-y-4 text-left">
           <div className="flex items-center justify-between pb-2 border-b border-[#E5E3DC]">
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-[#2C5E48]" />
               <span className="text-xs font-bold text-[#191B1F] uppercase tracking-wider">
-                Step 2: AI Diagnosis
+                Step 2: Confirm report
               </span>
             </div>
-            <span className="text-[10px] font-mono text-[#1E6B42] bg-[#EBF7EF] px-2 py-0.5 rounded border border-[#C8EAD4] font-bold">
-              92% CONFIDENCE
+            <span className="text-[10px] font-mono text-[#7E8592] bg-[#F4F3EF] px-2 py-0.5 rounded border border-[#E5E3DC] font-bold">
+              AI prediction is separate
             </span>
           </div>
 
           {/* Captured photo thumbnail */}
           <div className="h-36 rounded-xl overflow-hidden border border-[#E5E3DC]">
-            <img src={photoUrl} alt="Captured" className="w-full h-full object-cover" />
+            {photoUrl ? <img src={photoUrl} alt="Captured" className="w-full h-full object-cover" /> : <div className="h-full flex items-center justify-center text-xs text-[#7E8592]">No photo selected</div>}
           </div>
 
           {/* AI Auto-Detected Details */}
           <div className="space-y-3">
             <div>
               <label className="text-[10px] font-bold text-[#7E8592] uppercase block">
-                Detected Issue Category
+                Citizen-selected category
               </label>
               <div className="mt-1 flex items-center justify-between p-2.5 rounded-lg bg-[#FAF9F5] border border-[#E5E3DC]">
                 <span className="text-xs font-bold text-[#191B1F] flex items-center gap-2">
-                  <CategoryBadge category={detectedCategory} />
+                  <select value={category} onChange={(event) => setCategory(event.target.value as Category)} className="text-xs border border-[#E5E3DC] rounded p-1">
+                    <option value="POTHOLE_ROAD_DAMAGE">Pothole / road damage</option>
+                    <option value="GARBAGE_OVERFLOW">Garbage overflow</option>
+                    <option value="BROKEN_STREETLIGHT">Broken streetlight</option>
+                    <option value="DRAINAGE_WATERLOGGING">Drainage / waterlogging</option>
+                    <option value="OTHER">Other</option>
+                  </select>
                 </span>
-                <span className="text-[11px] text-[#1E6B42] font-semibold">92% Match</span>
+                <span className="text-[11px] text-[#7E8592] font-semibold">Submitted as selected</span>
               </div>
             </div>
 
             <div>
               <label className="text-[10px] font-bold text-[#7E8592] uppercase block">
-                Auto-Detected Location
+                GPS location
               </label>
               <div className="mt-1 p-2.5 rounded-lg bg-[#FAF9F5] border border-[#E5E3DC] text-xs font-semibold text-[#191B1F] flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-[#2C5E48] shrink-0" />
-                <span>{detectedLocation}</span>
+                <span>{location ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}` : 'Location unavailable'}</span>
               </div>
             </div>
 
@@ -253,8 +337,8 @@ export const CitizenView: React.FC = () => {
                 Generated Description (You can edit)
               </label>
               <textarea
-                value={detectedDescription}
-                onChange={(e) => setDetectedDescription(e.target.value)}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 rows={2}
                 className="mt-1 w-full p-2.5 rounded-lg bg-white border border-[#E5E3DC] text-xs text-[#191B1F] focus:outline-none focus:border-[#2C5E48]"
               />
@@ -264,15 +348,16 @@ export const CitizenView: React.FC = () => {
           {/* Action Buttons */}
           <div className="space-y-2 pt-2 border-t border-[#F4F3EF]">
             <button
-              onClick={handleConfirmSubmit}
+              onClick={() => void handleConfirmSubmit()}
+              disabled={submitting}
               className="w-full py-3.5 rounded-xl bg-[#2C5E48] hover:bg-[#1E4333] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
             >
               <Send className="w-4 h-4" />
-              <span>{isOffline ? 'Save Report Offline' : 'Confirm & Submit to City'}</span>
+              <span>{submitting ? 'Submitting to city…' : 'Confirm & Submit to City'}</span>
             </button>
 
             <button
-              onClick={() => setMode('camera')}
+              onClick={() => setMode('home')}
               className="w-full py-2 text-center text-xs text-[#7E8592] hover:underline"
             >
               Retake Photo
@@ -290,25 +375,24 @@ export const CitizenView: React.FC = () => {
 
           <div>
             <h2 className="text-lg font-bold text-[#191B1F]">
-              {isOffline ? 'Report Cached Offline' : 'Report Successfully Submitted!'}
+              Report Successfully Submitted!
             </h2>
             <p className="text-xs text-[#565C68] mt-1 max-w-xs mx-auto">
-              {isOffline
-                ? 'Your signal is safely stored on this device. It will automatically transmit to the city when you regain network coverage.'
-                : 'Thank you for helping keep your city safe. Your report has been corroborated by SANKET and assigned to PWD.'}
+              'Your report was stored by the SANKET backend and is available to municipal users.'
             </p>
           </div>
 
           <div className="p-3 rounded-xl bg-[#FAF9F5] border border-[#E5E3DC] text-xs">
             <span className="text-[#7E8592] block font-mono">Tracking Ticket Number:</span>
             <span className="font-mono font-bold text-sm text-[#191B1F] mt-0.5 block">
-              {submittedTicket || 'CHD-2026-0817'}
+              {submittedReportId ?? 'Unavailable'}
             </span>
+            {submittedIncidentId && <span className="text-[#7E8592] block mt-1">Incident: {submittedIncidentId}</span>}
           </div>
 
           <div className="pt-2 space-y-2">
             <button
-              onClick={() => setMode('recent')}
+              onClick={() => void loadRecent()}
               className="w-full py-2.5 rounded-xl bg-[#F4F3EF] hover:bg-[#ECEAE3] text-[#191B1F] font-bold text-xs border border-[#E5E3DC] transition-colors"
             >
               View Neighborhood Status Feed
@@ -343,25 +427,25 @@ export const CitizenView: React.FC = () => {
           </div>
 
           <div className="space-y-2.5">
-            {incidents.slice(0, 6).map((inc) => (
+            {recentIncidents.length === 0 ? <div className="p-6 text-center text-xs text-[#7E8592]">No civic incidents available.</div> : recentIncidents.slice(0, 6).map((inc) => (
               <div
                 key={inc.id}
                 className="p-3.5 bg-white rounded-xl border border-[#E5E3DC] shadow-xs space-y-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <CategoryBadge category={inc.category} />
-                    <h3 className="text-xs font-bold text-[#191B1F] mt-1">{inc.title}</h3>
-                    <p className="text-[11px] text-[#565C68] mt-0.5">{inc.location}</p>
+                    <span className="text-[10px] font-bold text-[#2C5E48]">{formatCategory(inc.category)}</span>
+                    <h3 className="text-xs font-bold text-[#191B1F] mt-1">{inc.incident_number}</h3>
+                    <p className="text-[11px] text-[#565C68] mt-0.5">{inc.sector_name ?? 'Location unavailable'}</p>
                   </div>
-                  <StatusBadge status={inc.status} />
+                  <span className="text-[10px] font-bold text-[#565C68]">{formatStatus(inc.status)}</span>
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] text-[#7E8592] pt-2 border-t border-[#F4F3EF]">
-                  <span>{inc.waitingDays} days ago</span>
+                  <span>{inc.waiting_days} days waiting</span>
                   <span className="text-[#1E6B42] font-semibold flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" />
-                    {inc.confidenceScore}% verified
+                    {inc.confidence_score}% confidence
                   </span>
                 </div>
               </div>
@@ -372,3 +456,11 @@ export const CitizenView: React.FC = () => {
     </div>
   );
 };
+
+function formatCategory(category: string) {
+  return category.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatStatus(status: string) {
+  return status.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+}

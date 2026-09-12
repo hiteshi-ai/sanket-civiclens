@@ -105,30 +105,7 @@ export const CivicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Offline Simulation
   const [isOffline, setIsOffline] = useState<boolean>(false);
-  const [offlineQueue, setOfflineQueue] = useState<OfflineReport[]>([
-    {
-      id: 'off-01',
-      timestamp: '2026-09-09T14:10:00Z',
-      category: 'pothole',
-      location: 'Near Old Forest Checkpost, Sukhna Enclave',
-      sector: 'Rural Fringe',
-      latitude: 30.758,
-      longitude: 76.825,
-      description: 'Asphalt edge wash-out observed during low connectivity patrol.',
-      synced: false
-    },
-    {
-      id: 'off-02',
-      timestamp: '2026-09-09T15:25:00Z',
-      category: 'drainage',
-      location: 'Kishangarh Canal Bund Drain Gate 4',
-      sector: 'Kishangarh',
-      latitude: 30.732,
-      longitude: 76.831,
-      description: 'Silt blockage detected in remote catchment line.',
-      synced: false
-    }
-  ]);
+  const [offlineQueue] = useState<OfflineReport[]>([]);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   // Notifications
@@ -164,86 +141,11 @@ export const CivicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleOffline = () => {
-    const nextState = !isOffline;
-    setIsOffline(nextState);
-    if (nextState) {
-      showToast(
-        'Offline Mode Activated',
-        'Simulating low-connectivity / remote region. Reports will be saved locally.',
-        'warning'
-      );
-    } else {
-      showToast(
-        'Connection Restored',
-        'Online link established with SANKET municipal servers.',
-        'info'
-      );
-    }
+    showToast('Offline mode unavailable', 'Reports require a live connection to the SANKET backend.', 'warning');
   };
 
   const syncOfflineQueue = () => {
-    if (offlineQueue.length === 0) return;
-    setIsSyncing(true);
-    showToast(
-      'Synchronizing Data',
-      `Transmitting ${offlineQueue.length} offline signals to SANKET intelligence engine...`,
-      'info'
-    );
-
-    setTimeout(() => {
-      // Create new incidents from offline queue
-      const converted: Incident[] = offlineQueue.map((item, idx) => ({
-        id: `inc-sync-${Date.now()}-${idx}`,
-        ticketNumber: `CHD-2026-SYNC${Math.floor(100 + Math.random() * 900)}`,
-        title: `${item.category.toUpperCase()}: ${item.location}`,
-        category: item.category,
-        location: item.location,
-        sector: item.sector,
-        latitude: item.latitude,
-        longitude: item.longitude,
-        reportedAt: item.timestamp,
-        waitingDays: 1,
-        status: 'reported' as IncidentStatus,
-        riskScore: 68,
-        riskLevel: 'high',
-        severity: 7,
-        publicImpact: 7,
-        locationExposure: 6,
-        waitingScore: 2,
-        riskReasoning: 'Newly synchronized remote signal. Prioritized for field reconnaissance.',
-        confidenceScore: 84,
-        confidenceEvidence: {
-          relatedReportsCount: 2,
-          locationMatchRadiusMeters: 8.5,
-          visualSimilarityPercentage: 82,
-          timeClusteringScore: 85,
-          citizenSignalSources: ['Offline Remote Sync Buffer (1)'],
-          lastCalculatedAgo: 'Just now'
-        },
-        isRecurring: false,
-        recurrenceCount: 1,
-        agingCurve: [
-          { day: 1, label: 'Day 1 Intake', riskBoost: 0, isPast: true, isCurrent: true },
-          { day: 15, label: 'Day 15 Escalation', riskBoost: 10, isPast: false, isCurrent: false },
-          { day: 30, label: 'Day 30 SLA Breach', riskBoost: 22, isPast: false, isCurrent: false },
-          { day: 45, label: 'Day 45 Emergency Tier', riskBoost: 32, isPast: false, isCurrent: false }
-        ],
-        agingThresholdCrossed: false,
-        beforeImageUrl: item.imageDataUrl || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80',
-        description: item.description,
-        sourceAttribution: 'Offline Field Sync — Chandigarh Remote Division',
-        lastUpdated: new Date().toISOString()
-      }));
-
-      setIncidents((prev) => [...converted, ...prev]);
-      setOfflineQueue([]);
-      setIsSyncing(false);
-      showToast(
-        'Synchronization Complete',
-        `${converted.length} reports submitted and processed through SANKET intelligence engine.`,
-        'success'
-      );
-    }, 1800);
+    showToast('No offline reports', 'No locally cached reports are available to synchronize.', 'info');
   };
 
   const submitCitizenReport = (data: {
@@ -253,79 +155,8 @@ export const CivicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     location: string;
     imageDataUrl?: string;
   }) => {
-    if (isOffline) {
-      const offlineItem: OfflineReport = {
-        id: `off-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        category: data.category,
-        location: data.location,
-        sector: data.sector,
-        latitude: 30.74 + (Math.random() - 0.5) * 0.04,
-        longitude: 76.78 + (Math.random() - 0.5) * 0.04,
-        description: data.description,
-        imageDataUrl: data.imageDataUrl,
-        synced: false
-      };
-      setOfflineQueue((prev) => [offlineItem, ...prev]);
-      showToast(
-        'Report Saved Offline',
-        'Network disconnected. Report cached securely and will sync once back online.',
-        'warning'
-      );
-      return;
-    }
-
-    const newTicket = `CHD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newInc: Incident = {
-      id: `inc-${Date.now()}`,
-      ticketNumber: newTicket,
-      title: `${data.category.toUpperCase()} Report — ${data.sector}`,
-      category: data.category,
-      location: data.location,
-      sector: data.sector,
-      latitude: 30.7415 + (Math.random() - 0.5) * 0.03,
-      longitude: 76.7794 + (Math.random() - 0.5) * 0.03,
-      reportedAt: new Date().toISOString(),
-      waitingDays: 0,
-      status: 'reported',
-      riskScore: 71,
-      riskLevel: 'high',
-      severity: 7,
-      publicImpact: 7,
-      locationExposure: 7,
-      waitingScore: 1,
-      riskReasoning: 'Newly received citizen signal. SANKET AI is clustering with existing municipal telemetry.',
-      confidenceScore: 92,
-      confidenceEvidence: {
-        relatedReportsCount: 1,
-        locationMatchRadiusMeters: 2.5,
-        visualSimilarityPercentage: 91,
-        timeClusteringScore: 93,
-        citizenSignalSources: ['CivicLens Citizen Mobile App (1)'],
-        lastCalculatedAgo: 'Just now'
-      },
-      isRecurring: false,
-      recurrenceCount: 1,
-      agingCurve: [
-        { day: 1, label: 'Day 1 Intake', riskBoost: 0, isPast: true, isCurrent: true },
-        { day: 15, label: 'Day 15 Escalation', riskBoost: 10, isPast: false, isCurrent: false },
-        { day: 30, label: 'Day 30 SLA Breach', riskBoost: 22, isPast: false, isCurrent: false },
-        { day: 45, label: 'Day 45 Emergency Tier', riskBoost: 32, isPast: false, isCurrent: false }
-      ],
-      agingThresholdCrossed: false,
-      beforeImageUrl: data.imageDataUrl || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80',
-      description: data.description,
-      sourceAttribution: 'Citizen Signal — CivicLens App',
-      lastUpdated: new Date().toISOString()
-    };
-
-    setIncidents((prev) => [newInc, ...prev]);
-    setSelectedIncidentId(newInc.id);
-    showToast(
-      'Signal Received & Verified',
-      `Ticket #${newTicket} registered with 92% Civic Confidence.`,
-      'success'
-    );
+    void data;
+    showToast('Use the citizen report form', 'The real report form captures photo, GPS, and submits to the backend.', 'info');
   };
 
   const resolveFieldIncident = (
@@ -340,17 +171,7 @@ export const CivicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             ...inc,
             status,
             afterImageUrl,
-            smartClosure: {
-              matchConfidence: status === 'resolved' ? 96 : 58,
-              distanceMeters: 8,
-              isLikelyMatch: status === 'resolved',
-              visualMatchScore: status === 'resolved' ? 94 : 52,
-              explanation:
-                status === 'resolved'
-                  ? 'Location coordinates match within 8 metres. Structural perimeter landmarks and asphalt aggregate texture align with 94% visual confidence.'
-                  : 'Visual match score below threshold (52%). Secondary supervisory inspection required.',
-              inspectedAt: new Date().toISOString()
-            },
+            smartClosure: undefined,
             lastUpdated: new Date().toISOString()
           };
         }
@@ -360,8 +181,8 @@ export const CivicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (status === 'resolved') {
       showToast(
-        'SANKET Smart Closure Match: 96% Verified',
-        'Before & after repair photos matched within 8m GPS radius. Incident marked as RESOLVED.',
+        'Repair evidence submitted',
+        'The incident status was updated locally; closure verification remains unavailable until backend evidence is evaluated.',
         'success'
       );
     } else {
